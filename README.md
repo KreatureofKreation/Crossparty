@@ -1,8 +1,8 @@
-# Crosstalk
+# Crossparty
 
 Cross-platform party chat for Linux.
 
-Crosstalk is an unofficial desktop app for Xbox party chat on the web. It
+Crossparty is an unofficial desktop app for Xbox party chat on the web. It
 wraps the official web app at xbox.com/play in a native-feeling KDE window,
 with an in-game overlay and a handheld mode.
 
@@ -10,15 +10,15 @@ with an in-game overlay and a handheld mode.
 
 ## Disclaimer
 
-Crosstalk is an unofficial project and is not affiliated with, endorsed by, or
+Crossparty is an unofficial project and is not affiliated with, endorsed by, or
 sponsored by Microsoft. Xbox is a trademark of Microsoft Corporation.
 
-Crosstalk comes with no warranty (see [LICENSE](LICENSE)). It is a hobby
+Crossparty comes with no warranty (see [LICENSE](LICENSE)). It is a hobby
 project, and fixes are best effort.
 
 ## Privacy
 
-Crosstalk collects nothing. There is no telemetry, analytics or crash
+Crossparty collects nothing. There is no telemetry, analytics or crash
 reporting. The only network traffic is to Microsoft's own sites, the same as
 using them in a browser. Microsoft still sees everything said and done in a
 party.
@@ -33,7 +33,7 @@ dev/setup.sh
 ```
 
 ```bash
-distrobox enter crosstalk-dev
+distrobox enter crossparty-dev
 ```
 
 Then inside the container:

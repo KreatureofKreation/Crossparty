@@ -7,7 +7,7 @@ ecm_add_test(MainWindowTest.cpp
 )
 
 target_compile_definitions(MainWindowTest PRIVATE
-    CROSSTALK_MAIN_QML="${PROJECT_SOURCE_DIR}/src/qml/Main.qml"
+    CROSSPARTY_MAIN_QML="${PROJECT_SOURCE_DIR}/src/qml/Main.qml"
 )
 
 # Tests run with no display at all, the same in CI and inside the Flatpak

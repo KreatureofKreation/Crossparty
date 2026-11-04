@@ -5,11 +5,11 @@
 # them, each with a reason, so this list stays the full truth about what the
 # app can reach. See docs/security.md#sec-005.
 
-id: io.github.KreatureofKreation.Crosstalk
+id: io.github.KreatureofKreation.Crossparty
 runtime: org.kde.Platform
 runtime-version: '6.11'
 sdk: org.kde.Sdk
-command: crosstalk
+command: crossparty
 
 finish-args:
   # Display. Native Wayland only, with no X11 socket: X11 apps can read other
@@ -19,7 +19,7 @@ finish-args:
   - --device=dri
 
 modules:
-  - name: crosstalk
+  - name: crossparty
     buildsystem: cmake-ninja
     builddir: true
     # Runs the unit tests inside the build sandbox. A failing test fails the

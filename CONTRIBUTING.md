@@ -5,7 +5,7 @@
 Run `dev/setup.sh` once on the host, then do all work inside the container:
 
 ```bash
-distrobox enter crosstalk-dev
+distrobox enter crossparty-dev
 ```
 
 Commit from inside the container. The git hooks call tools that exist only
@@ -31,7 +31,7 @@ there, so a commit made from the host fails on purpose.
 |---|---|
 | `dev/lint.sh` | Formatters, QML lint, secret scan, clazy, clang-tidy, unit tests |
 | `dev/flatpak-build.sh` | Builds the Flatpak, runs the tests inside it, installs it |
-| `flatpak run io.github.KreatureofKreation.Crosstalk` | Runs the installed build |
+| `flatpak run io.github.KreatureofKreation.Crossparty` | Runs the installed build |
 
 ## Workflow
 

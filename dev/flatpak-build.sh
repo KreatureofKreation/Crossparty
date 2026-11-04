@@ -6,11 +6,11 @@
 # user. It works from the host or from inside the dev container. Run it as:
 #
 #     dev/flatpak-build.sh
-#     flatpak run io.github.KreatureofKreation.Crosstalk
+#     flatpak run io.github.KreatureofKreation.Crossparty
 
 set -euo pipefail
 
-readonly manifest="io.github.KreatureofKreation.Crosstalk.yml"
+readonly manifest="io.github.KreatureofKreation.Crossparty.yml"
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd "$repository_root"

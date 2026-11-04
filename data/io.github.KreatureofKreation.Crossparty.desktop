@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Crosstalk
+Name=Crossparty
 Comment=Cross-platform party chat for Linux
-Exec=crosstalk
+Exec=crossparty
 Terminal=false
 Categories=Network;Chat;
-StartupWMClass=io.github.KreatureofKreation.Crosstalk
+StartupWMClass=io.github.KreatureofKreation.Crossparty

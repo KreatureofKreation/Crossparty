@@ -11,14 +11,14 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    QGuiApplication::setApplicationName(QStringLiteral("crosstalk"));
-    QGuiApplication::setApplicationDisplayName(QStringLiteral("Crosstalk"));
-    QGuiApplication::setApplicationVersion(QStringLiteral(CROSSTALK_VERSION));
+    QGuiApplication::setApplicationName(QStringLiteral("crossparty"));
+    QGuiApplication::setApplicationDisplayName(QStringLiteral("Crossparty"));
+    QGuiApplication::setApplicationVersion(QStringLiteral(CROSSPARTY_VERSION));
 
     // The desktop file name becomes our Wayland app ID. KDE's portals use it to
     // tie each permission you grant (shortcuts, notifications) to this app
     // only. See docs/security.md#sec-006.
-    QGuiApplication::setDesktopFileName(QStringLiteral(CROSSTALK_APP_ID));
+    QGuiApplication::setDesktopFileName(QStringLiteral(CROSSPARTY_APP_ID));
 
     // Use Plasma's own control style so the app looks like it shipped with
     // KDE, unless the user has chosen a style themselves.
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
         },
         Qt::QueuedConnection);
 
-    engine.loadFromModule(u"Crosstalk", u"Main");
+    engine.loadFromModule(u"Crossparty", u"Main");
 
     return QGuiApplication::exec();
 }

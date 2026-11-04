@@ -1,6 +1,6 @@
 # Security notes
 
-This file explains every security decision in Crosstalk, in plain English.
+This file explains every security decision in Crossparty, in plain English.
 Code that makes one of these decisions links here with a comment such as
 `docs/security.md#sec-001`.
 
@@ -76,7 +76,7 @@ access to the test sandbox.
 ### SEC-006: The app identifies itself by its app ID
 
 **Decision:** `main.cpp` sets the desktop file name to
-`io.github.KreatureofKreation.Crosstalk`, the same as the Flatpak ID.
+`io.github.KreatureofKreation.Crossparty`, the same as the Flatpak ID.
 
 **Why:** On Wayland, the desktop file name becomes the app ID that KDE's
 portals use. When you approve global shortcuts or notifications, the approval

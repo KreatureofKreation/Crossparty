@@ -19,7 +19,7 @@ private Q_SLOTS:
 void MainWindowTest::loadsAndCreatesAWindow()
 {
     QQmlApplicationEngine engine;
-    engine.load(QUrl::fromLocalFile(QStringLiteral(CROSSTALK_MAIN_QML)));
+    engine.load(QUrl::fromLocalFile(QStringLiteral(CROSSPARTY_MAIN_QML)));
 
     QCOMPARE(engine.rootObjects().size(), 1);
     QVERIFY(qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst()) != nullptr);

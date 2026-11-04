@@ -12,8 +12,8 @@
 
 set -euo pipefail
 
-readonly container_name="crosstalk-dev"
-readonly image_name="localhost/crosstalk-dev:latest"
+readonly container_name="crossparty-dev"
+readonly image_name="localhost/crossparty-dev:latest"
 readonly repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd "$repository_root"

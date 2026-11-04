@@ -3,12 +3,12 @@
 
 cmake_minimum_required(VERSION 3.25)
 
-project(Crosstalk VERSION 0.0.1 LANGUAGES CXX)
+project(Crossparty VERSION 0.0.1 LANGUAGES CXX)
 
 # The one place the application ID is written down. Everything else (the
 # desktop file name, the Wayland app ID, settings paths, keyring entries)
 # is derived from it, so it must never change once anyone has installed the app.
-set(CROSSTALK_APP_ID "io.github.KreatureofKreation.Crosstalk")
+set(CROSSPARTY_APP_ID "io.github.KreatureofKreation.Crossparty")
 
 set(QT_MIN_VERSION "6.8")
 set(KF_MIN_VERSION "6.0")
@@ -37,4 +37,4 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-install(FILES data/${CROSSTALK_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES data/${CROSSPARTY_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})

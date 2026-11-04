@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Build the dev container
-        run: docker build --tag crosstalk-dev --file dev/Containerfile dev
+        run: docker build --tag crossparty-dev --file dev/Containerfile dev
 
       - name: Run dev/lint.sh in the dev container
         run: >
@@ -40,7 +40,7 @@ jobs:
           --env GIT_CONFIG_COUNT=1
           --env GIT_CONFIG_KEY_0=safe.directory
           --env GIT_CONFIG_VALUE_0=/src
-          crosstalk-dev dev/lint.sh
+          crossparty-dev dev/lint.sh
 
   flatpak:
     name: Flatpak build and tests
@@ -58,6 +58,6 @@ jobs:
       # and network access to the test sandbox, which our tests don't need.
       - uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3  # v6.8
         with:
-          manifest-path: io.github.KreatureofKreation.Crosstalk.yml
-          bundle: crosstalk.flatpak
-          cache-key: flatpak-builder-${{ hashFiles('io.github.KreatureofKreation.Crosstalk.yml') }}
+          manifest-path: io.github.KreatureofKreation.Crossparty.yml
+          bundle: crossparty.flatpak
+          cache-key: flatpak-builder-${{ hashFiles('io.github.KreatureofKreation.Crossparty.yml') }}
