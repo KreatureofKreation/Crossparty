@@ -92,6 +92,22 @@ state. Once the app manages a microphone, that would mean audio you cannot
 see or stop. Failing closed is the rule throughout (plan: Clean, readable
 code).
 
+### SEC-008: Pushing to GitHub uses a dedicated SSH key
+
+**Decision:** Git signs in to GitHub with an Ed25519 SSH key made only for
+GitHub (`~/.ssh/id_ed25519_github`), protected by a passphrase. `~/.ssh/config`
+sets `IdentitiesOnly yes` for `github.com`, so no other key is ever offered.
+
+**Why:** If this key leaks, revoking it affects nothing else you use. A
+passphrase means a copied key file is useless on its own. SSH, unlike an HTTPS
+token, involves no long-lived secret typed into a terminal or stored in git's
+config. GitHub's host fingerprint was checked against the one GitHub publishes
+before the first connection.
+
+**Follow-up:** Move to a key that lives on the hardware security key
+(`ed25519-sk`) when one is set up, then delete this key from GitHub. With that
+key, the secret cannot be copied at all, and each push needs a physical touch.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome
