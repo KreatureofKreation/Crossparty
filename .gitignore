@@ -1,0 +1,20 @@
+# Build output
+/build/
+/build-dir/
+/repo/
+/.flatpak-builder/
+*.flatpak
+compile_commands.json
+CMakeLists.txt.user*
+
+# OpenTofu. The state file stays out of the repo, even though it is
+# encrypted (plan: IaC and dev environment).
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Editors
+.vscode/
+.idea/
+*.swp

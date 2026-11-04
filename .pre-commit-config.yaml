@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# Runs on every `git commit` inside the dev container. The local hooks use the
+# container's own tools, so their versions are pinned by dev/Containerfile.
+# The one outside hook repo is pinned to a full commit hash.
+# See docs/security.md#sec-002 and #sec-004.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        # KDE's .clang-format holds one YAML document per language.
+        args: [--allow-multiple-documents]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret scan)
+        entry: gitleaks git --pre-commit --staged --redact --no-banner
+        language: system
+        pass_filenames: false
+
+      - id: clang-format
+        name: clang-format
+        entry: clang-format -i
+        language: system
+        types_or: [c++]
+
+      - id: qmlformat
+        name: qmlformat
+        entry: qmlformat-qt6 --inplace
+        language: system
+        files: \.qml$
+
+      - id: qmllint
+        name: qmllint
+        entry: qmllint-qt6
+        language: system
+        files: \.qml$

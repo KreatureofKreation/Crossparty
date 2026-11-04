@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# The development container. Distrobox runs it on your desktop (dev/setup.sh)
+# and CI runs the same image for linting, so "works on my machine" and
+# "works in CI" mean the same thing. See docs/security.md#sec-001.
+
+# Pinned by digest so the base cannot change underneath us. Dependabot proposes
+# updates on the staging branch.
+FROM registry.fedoraproject.org/fedora-toolbox:44@sha256:d48ce913e47f6f29db17e55102a02933a4405d813573e8ed2f1ebe6f1aaf53e5
+
+COPY packages.txt /tmp/packages.txt
+RUN grep -v '^#' /tmp/packages.txt | xargs dnf install -y --setopt=install_weak_deps=False \
+    && dnf clean all \
+    && rm /tmp/packages.txt

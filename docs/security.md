@@ -1,0 +1,102 @@
+# Security notes
+
+This file explains every security decision in Crosstalk, in plain English.
+Code that makes one of these decisions links here with a comment such as
+`docs/security.md#sec-001`.
+
+The full threat model (assets, threats and controls) is written up in
+stage 5. Until then, the Security and threat model section of the project
+plan is the reference.
+
+## Decision log
+
+### SEC-001: Development tools live in a container, not on the host
+
+**Decision:** Compilers, Qt dev packages, linters and OpenTofu are installed
+in a Distrobox container built from `dev/Containerfile`. CI lints with the same
+image.
+
+**Why:** Bazzite's host is immutable, and every package layered onto it is
+more to trust and to keep patched. A container can be deleted and rebuilt
+from the repo at any time. Because CI uses the same definition, a check that
+passes locally passes in CI too.
+
+**Limit:** Distrobox is for convenience, not a security boundary. It shares
+your home folder and runs as your user, so a malicious build tool inside it
+could still read your files. The real defence is choosing what goes in:
+Fedora's signed packages only.
+
+### SEC-002: Third-party code in CI is pinned by hash
+
+**Decision:** Every GitHub Action is pinned to a full commit hash, and every
+container image to a digest. The tag stays alongside as a comment for
+readability. The one outside pre-commit hook repo is pinned the same way.
+
+**Why:** A tag like `v7` can be moved to point at different code. If an
+action's maintainer account were taken over, a moved tag would run the
+attacker's code in our CI. A commit hash cannot be moved. Dependabot proposes
+hash updates as pull requests to `staging`, so updates are still reviewed.
+
+### SEC-003: CI gets a read-only token
+
+**Decision:** The workflow sets `permissions: contents: read`, and checkout
+uses `persist-credentials: false`.
+
+**Why:** If a build step or dependency were compromised, the token it could
+steal can only read the repo. It cannot push code or change releases.
+Not leaving the token in `.git/config` means later steps cannot pick it up
+by accident.
+
+### SEC-004: Secrets are caught before they are committed
+
+**Decision:** Every commit runs `gitleaks` and `detect-private-key` on the
+staged changes. CI scans the whole git history with `gitleaks`.
+
+**Why:** A secret pushed to GitHub has to be treated as leaked, even after it
+is deleted, because the history keeps it. Catching it before the commit is
+far cheaper than rotating it afterwards. GitHub's own secret scanning with
+push protection is added in stage 5 as a second layer.
+
+### SEC-005: Flatpak permissions are added only when a feature needs them
+
+**Decision:** The manifest starts with only `--socket=wayland` and
+`--device=dri`. Each later permission (network, audio, tray, Secret Service)
+is added in the stage that needs it, with a comment giving the reason.
+
+**Why:** Deny by default. A permission that is not granted cannot be abused,
+and a short list is easy to review. There is deliberately no X11 socket: X11
+lets any client read other clients' keystrokes, including games running on
+XWayland.
+
+**Testing:** The unit tests run headless (`QT_QPA_PLATFORM=offscreen`), so
+even the test sandbox needs no display socket. The CI Flatpak action's
+`run-tests` input is left off because it would add an X11 socket and network
+access to the test sandbox.
+
+### SEC-006: The app identifies itself by its app ID
+
+**Decision:** `main.cpp` sets the desktop file name to
+`io.github.KreatureofKreation.Crosstalk`, the same as the Flatpak ID.
+
+**Why:** On Wayland, the desktop file name becomes the app ID that KDE's
+portals use. When you approve global shortcuts or notifications, the approval
+is stored against that ID. Keeping one ID everywhere means approvals cannot
+be confused with another app's, and it is why the ID must never change.
+
+### SEC-007: Fail safe on startup
+
+**Decision:** If the interface fails to load, the app exits with an error.
+
+**Why:** An app that keeps running with no window has nothing showing its
+state. Once the app manages a microphone, that would mean audio you cannot
+see or stop. Failing closed is the rule throughout (plan: Clean, readable
+code).
+
+## Accepted risks
+
+### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome
+
+QtWebEngine is patched through the KDE runtime, which lags Chrome's releases.
+Exposure is limited because only Microsoft's own origins ever load in the app,
+and every other link opens in your default browser. This risk is reviewed at
+each release.

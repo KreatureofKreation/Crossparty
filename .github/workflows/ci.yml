@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# Minimal CI: lint and build-and-test on every push and pull request.
+# Every third-party action and image is pinned to a full commit hash or digest
+# (docs/security.md#sec-002), and the job token is read-only (#sec-003).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint, scan and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # Full history, so the secret scan sees every commit.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build the dev container
+        run: docker build --tag crosstalk-dev --file dev/Containerfile dev
+
+      - name: Run dev/lint.sh in the dev container
+        run: >
+          docker run --rm
+          --volume "$PWD:/src"
+          --workdir /src
+          --env GIT_CONFIG_COUNT=1
+          --env GIT_CONFIG_KEY_0=safe.directory
+          --env GIT_CONFIG_VALUE_0=/src
+          crosstalk-dev dev/lint.sh
+
+  flatpak:
+    name: Flatpak build and tests
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11@sha256:b0a8a2acb9e420dd0e3e083ff552bea5a817e17e41532f1d2287ff49ef9aae0e
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Tests run because the manifest sets `run-tests: true`. The action's own
+      # `run-tests` input is left off on purpose: it would add an X11 socket
+      # and network access to the test sandbox, which our tests don't need.
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3  # v6.8
+        with:
+          manifest-path: io.github.KreatureofKreation.Crosstalk.yml
+          bundle: crosstalk.flatpak
+          cache-key: flatpak-builder-${{ hashFiles('io.github.KreatureofKreation.Crosstalk.yml') }}

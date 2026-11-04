@@ -1,0 +1,24 @@
+# Packages installed into the development container (Fedora 44).
+# Build tools
+cmake
+ninja-build
+gcc-c++
+clang
+# OpenMP for Clang. Kirigami's CMake config requires it.
+libomp-devel
+git
+# Qt 6 and KDE
+extra-cmake-modules
+qt6-qtbase-devel
+qt6-qtdeclarative-devel
+qt6-qtwebengine-devel
+qt6-qttools-devel
+kf6-kirigami-devel
+layer-shell-qt-devel
+# Formatters, linters and scanners
+clang-tools-extra
+clazy
+pre-commit
+gitleaks
+# Infrastructure as code (used from stage 5)
+opentofu

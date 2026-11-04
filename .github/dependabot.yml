@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# Automated updates land on staging, never on main (plan: Release and
+# maintenance).
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /dev
+    target-branch: staging
+    schedule:
+      interval: weekly
