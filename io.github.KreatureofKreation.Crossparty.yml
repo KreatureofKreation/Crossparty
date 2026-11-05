@@ -9,14 +9,29 @@ id: io.github.KreatureofKreation.Crossparty
 runtime: org.kde.Platform
 runtime-version: '6.11'
 sdk: org.kde.Sdk
+# QtWebEngine is not in the KDE runtime. Flathub's base app supplies it, with
+# Chromium patched to run its own sandbox inside Flatpak (spike test 7).
+base: io.qt.qtwebengine.BaseApp
+base-version: '6.11'
 command: crossparty
 
 finish-args:
   # Display. Native Wayland only, with no X11 socket: X11 apps can read other
   # apps' keystrokes, including games on XWayland.
   - --socket=wayland
-  # GPU acceleration for Qt Quick.
+  # GPU acceleration for Qt Quick and the web page.
   - --device=dri
+  # Reach Microsoft's servers. Which sites load inside the app is decided by
+  # the site allowlist. See docs/security.md#sec-012.
+  - --share=network
+  # Microphone and speakers for party chat. Flatpak has no microphone-only
+  # option, so inside the app only Microsoft's sites get the microphone
+  # permission. See docs/security.md#sec-012.
+  - --socket=pulseaudio
+
+# Removes the parts of the QtWebEngine base app this app does not use.
+cleanup-commands:
+  - /app/cleanup-BaseApp.sh
 
 modules:
   - name: crossparty

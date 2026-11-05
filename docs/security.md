@@ -132,6 +132,70 @@ any unsandboxed program running as the user), and switching to Electron (it
 encrypts cookies but still keeps Local Storage in plain text, and it cannot
 draw the overlay as a layer surface).
 
+### SEC-010: Only Microsoft's sites load inside the app
+
+**Decision:** The page may only show addresses on an exact list of hosts:
+`www.xbox.com`, `login.live.com`, `login.microsoftonline.com` and
+`account.live.com`, over https on the standard port, with no user name in the
+address. Any other https link opens in the user's default browser, through the
+OpenURI portal. Everything else (plain http, `file:`, `data:`, `javascript:`,
+other apps' link schemes) is blocked. Requests to open a new window follow the
+same rules, and downloads are refused.
+
+**Why:** The main attack path is a link in party text chat. Inside the app, a
+malicious page would sit next to the Microsoft session and the microphone
+permission. In the user's own browser, it is just another web page. Exact
+host names, not patterns, mean a look-alike such as
+`www.xbox.com.attacker.example` can never match. A user name in an address
+(`https://www.xbox.com@attacker.example`) is refused because it hides the real
+host from anyone reading the link. Unknown link schemes are blocked rather
+than handed to the desktop, because they could open local files or start
+other programs.
+
+**Frames:** Frames embedded in an allowed page may load from other hosts,
+because Microsoft's pages use them (for example for sign-in checks) and a
+frame cannot be moved to the browser on its own. A frame can never replace the
+main page, and it gets no permissions unless its own origin is allowed
+(SEC-011).
+
+**Logs:** Decisions are logged with the scheme and host only, never the full
+address, which can carry personal details or sign-in tokens.
+
+**Tests:** `tests/SiteAllowlistTest.cpp` and `tests/NavigationPolicyTest.cpp`
+cover the tricks above. The host list came from where the stage 1 spike went
+while signing in and joining a party (`docs/spike.md`). A host is added only
+after seeing the page need it.
+
+### SEC-011: Browser permissions are denied by default
+
+**Decision:** Only two permissions are ever granted: the microphone and
+notifications, and only to pages on the allowlist (SEC-010). Every other
+request (camera, screen sharing, location, clipboard, mouse lock, local fonts,
+and any type added in a future QtWebEngine) is denied. The web profile is
+in-memory, so no decision is remembered across restarts.
+
+**Why:** Party chat needs the microphone, and invite alerts arrive as browser
+notifications. Playing sound needs no permission. Anything more would widen
+what a compromised or malicious page could do with no benefit to the user.
+Listing what is allowed, rather than what is refused, means a new kind of
+permission is refused automatically.
+
+**Tests:** `tests/PermissionPolicyTest.cpp`.
+
+### SEC-012: Network and audio access for the Flatpak
+
+**Decision:** The manifest adds `--share=network` and `--socket=pulseaudio`,
+and builds on Flathub's QtWebEngine base app.
+
+**Why:** The app cannot reach Microsoft's servers without the network, and
+party chat needs the microphone and speakers. Flatpak has no narrower option:
+network access is all or nothing, and the PulseAudio socket covers both
+playback and recording. The narrowing happens inside the app instead: the
+allowlist (SEC-010) decides which sites load, and the permission policy
+(SEC-011) decides which of them may use the microphone. The QtWebEngine base
+app is Flathub's own build of QtWebEngine, with Chromium patched so its
+sandbox runs inside Flatpak (spike test 7).
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

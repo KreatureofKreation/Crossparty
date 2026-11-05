@@ -23,7 +23,7 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMAddTests)
 
-find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Test)
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_MIN_VERSION})

@@ -1,17 +1,40 @@
 # SPDX-FileCopyrightText: 2026 KreatureofKreation
 # SPDX-License-Identifier: MIT
 
-qt_add_executable(crossparty main.cpp)
+# The security policies: plain C++ with no interface, so the unit tests can
+# check every decision directly.
+add_library(crossparty_core STATIC
+    core/NavigationPolicy.cpp
+    core/NavigationPolicy.h
+    core/PermissionPolicy.cpp
+    core/PermissionPolicy.h
+    core/SiteAllowlist.cpp
+    core/SiteAllowlist.h
+)
+target_include_directories(crossparty_core PUBLIC core)
+target_link_libraries(crossparty_core PUBLIC Qt6::Core Qt6::WebEngineCore)
 
-# NO_IMPORT_SCAN: Qt is a shared library here (Fedora and the KDE Flatpak
-# runtime), so QML plugins such as Kirigami load at runtime and must not be
-# linked into the binary. Scanning would only produce "plugin will not be
-# linked" warnings.
-qt_add_qml_module(crossparty
+# The interface and the objects it talks to, as a QML module. It is a library
+# so the tests can load exactly the same module as the app.
+qt_add_library(crossparty_ui STATIC)
+
+qt_add_qml_module(crossparty_ui
     URI Crossparty
+    OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
     QML_FILES qml/Main.qml
+    SOURCES core/WebSession.cpp core/WebSession.h
     NO_IMPORT_SCAN
 )
+
+target_link_libraries(crossparty_ui PUBLIC
+    crossparty_core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::WebEngineQuick
+)
+
+qt_add_executable(crossparty main.cpp)
 
 target_compile_definitions(crossparty PRIVATE
     CROSSPARTY_APP_ID="${CROSSPARTY_APP_ID}"
@@ -19,10 +42,14 @@ target_compile_definitions(crossparty PRIVATE
 )
 
 target_link_libraries(crossparty PRIVATE
-    Qt6::Gui
-    Qt6::Qml
-    Qt6::Quick
+    crossparty_ui
+    crossparty_uiplugin
     Qt6::QuickControls2
 )
+
+# Qt is a shared library here (Fedora and the KDE Flatpak runtime), so QML
+# plugins such as Kirigami load at runtime and must not be linked into the
+# binary. Scanning would only produce "plugin will not be linked" warnings.
+set_target_properties(crossparty PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
 
 install(TARGETS crossparty ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

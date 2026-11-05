@@ -3,12 +3,20 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlExtensionPlugin>
 #include <QQuickStyle>
+#include <qtwebenginequickglobal.h>
 
 #include <cstdlib>
 
+// The interface is a static QML module linked into the app.
+Q_IMPORT_QML_PLUGIN(CrosspartyPlugin)
+
 int main(int argc, char *argv[])
 {
+    // QtWebEngine must be set up before the application object exists.
+    QtWebEngineQuick::initialize();
+
     QGuiApplication app(argc, argv);
 
     QGuiApplication::setApplicationName(QStringLiteral("crossparty"));
