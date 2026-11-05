@@ -25,6 +25,22 @@ there, so a commit made from the host fails on purpose.
 - No dead code and no commented-out code.
 - Fail safe: deny, close and log rather than carry on.
 
+## Interface text
+
+Every piece of text a user can see is wrapped for translation: `qsTr("...")`
+in QML, `tr("...")` in C++. Log messages are not, because they are for
+developers. Qt's own system (Qt Linguist) is used rather than KDE's KI18n:
+it needs no extra library, and the app is not part of KDE's translation
+infrastructure.
+
+## Settings
+
+Settings live in one file, `settings.ini` in the app's config folder, read and
+written only through `src/core/SettingsFile.cpp`. The file carries a `version`
+number. Changing what a key means, or renaming one, needs a new version and a
+conversion from the old one in `SettingsFile::load`, with a test. A file with
+a newer version than the app knows is left alone.
+
 ## Running the checks
 
 | Command | What it does |

@@ -48,6 +48,7 @@ plan is recorded here before it is built.
 | Learning mode | On | Plain-English comments, explained decisions, security write-up |
 | Cookie storage | In-memory web profile; the app saves only cookies, encrypted _(amended 2026-11-05)_ | QtWebEngine never encrypts its cookie database (spike test 8). Costs one click on Sign in per launch. See SEC-009 |
 | Cookie key | From the XDG Secret portal (KWallet), encrypted by the app with AES-256-GCM _(amended 2026-11-05)_ | Needs no Flatpak permission. Talking to Secret Service directly would open far more of the keyring than the app needs |
+| Translation | Qt's own system (`qsTr`, Qt Linguist), not KDE's KI18n _(added 2026-11-05)_ | No extra library, and the app is not part of KDE's translation infrastructure |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
@@ -469,8 +470,9 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    text.
 3. Window and top bar: Kirigami window, system theme, 36 px top bar.
 4. Shared core and settings: views over one core, translatable text,
-   versioned settings file.
-5. Tray and window behaviour: close to tray, single instance, saved size.
+   versioned settings file, saved window size (moved from 5, as the first
+   setting).
+5. Tray and window behaviour: close to tray, single instance.
 
 ## Risks and open questions
 

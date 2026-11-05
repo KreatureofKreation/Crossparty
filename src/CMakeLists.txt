@@ -16,6 +16,8 @@ add_library(crossparty_core STATIC
     core/PermissionPolicy.h
     core/SecretPortal.cpp
     core/SecretPortal.h
+    core/SettingsFile.cpp
+    core/SettingsFile.h
     core/SiteAllowlist.cpp
     core/SiteAllowlist.h
 )
@@ -29,8 +31,8 @@ qt_add_library(crossparty_ui STATIC)
 qt_add_qml_module(crossparty_ui
     URI Crossparty
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
-    QML_FILES qml/Main.qml qml/TopBar.qml qml/WindowEdges.qml
-    SOURCES core/WebSession.cpp core/WebSession.h
+    QML_FILES qml/Main.qml qml/PartyPage.qml qml/TopBar.qml qml/WindowEdges.qml
+    SOURCES core/AppSettings.cpp core/AppSettings.h core/WebSession.cpp core/WebSession.h
     NO_IMPORT_SCAN
 )
 
