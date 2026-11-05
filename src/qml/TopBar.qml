@@ -5,10 +5,11 @@ import QtQuick
 import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
+import Crossparty
 
 // The window's own title bar, about 36 px tall, in place of KDE's. It follows
-// the system theme and uses system icons. Mute and overlay buttons join it in
-// stage 3, when those features exist.
+// the system theme and uses system icons. The overlay button joins it with
+// the overlay.
 QQC2.ToolBar {
     id: topBar
 
@@ -53,6 +54,23 @@ QQC2.ToolBar {
             Layout.leftMargin: Kirigami.Units.largeSpacing
             text: topBar.window.title
             elide: Text.ElideRight
+        }
+
+        // Mutes the microphone itself (MicrophoneMute), and always shows
+        // whether it is muted.
+        TopBarButton {
+            text: MicrophoneMute.muted ? qsTr("Unmute microphone") : qsTr("Mute microphone")
+            icon.name: MicrophoneMute.muted ? "microphone-sensitivity-muted" : "audio-input-microphone"
+            checkable: true
+            checked: MicrophoneMute.muted
+            enabled: MicrophoneMute.available
+            onClicked: MicrophoneMute.toggle()
+        }
+
+        Kirigami.Separator {
+            Layout.fillHeight: true
+            Layout.topMargin: Kirigami.Units.smallSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
         }
 
         TopBarButton {

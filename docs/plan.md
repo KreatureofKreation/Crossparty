@@ -49,6 +49,8 @@ plan is recorded here before it is built.
 | Cookie storage | In-memory web profile; the app saves only cookies, encrypted _(amended 2026-11-05)_ | QtWebEngine never encrypts its cookie database (spike test 8). Costs one click on Sign in per launch. See SEC-009 |
 | Cookie key | From the XDG Secret portal (KWallet), encrypted by the app with AES-256-GCM _(amended 2026-11-05)_ | Needs no Flatpak permission. Talking to Secret Service directly would open far more of the keyring than the app needs |
 | Translation | Qt's own system (`qsTr`, Qt Linguist), not KDE's KI18n _(added 2026-11-05)_ | No extra library, and the app is not part of KDE's translation infrastructure |
+| Microphone mute | Mute the app's own recording stream in PipeWire, found by the app ID PipeWire tags it with _(added 2026-11-05)_ | QtWebEngine only mutes page output, and scripting the page is ruled out. Tested: the page hears silence. See SEC-014 |
+| Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
@@ -462,6 +464,14 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 | 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | |
 | 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | |
 
+### Stage 3 pull requests _(added 2026-11-05)_
+
+1. Microphone mute: mute our own recording stream, top-bar mute button.
+2. Global hotkeys: shortcuts portal, Meta+Shift+M for mute.
+3. Overlay: layer surface hosting the live page, zoom, focus, Esc and
+   click-outside dismiss, Meta+Shift+X, top-bar overlay button.
+4. Muted badge and invite toasts.
+
 ### Stage 2 pull requests _(added 2026-11-05)_
 
 1. Web core and security controls: in-memory profile, site allowlist, link
@@ -500,10 +510,9 @@ answered it before any real build. _(amended 2026-11-05)_
   HUDs?
 - ~~Does QtWebEngine's own Chromium sandbox run inside Flatpak?~~ Yes (spike
   test 7). _(amended 2026-11-05)_
-- How does the mute hotkey mute the microphone itself? QtWebEngine can only
-  mute a page's output; muting our own capture stream through
-  PulseAudio/PipeWire is the likely route. Answer before stage 3. _(added
-  2026-11-05)_
+- ~~How does the mute hotkey mute the microphone itself?~~ By muting the
+  app's own recording stream in PipeWire (see the decisions log and SEC-014).
+  _(answered 2026-11-05)_
 
 ## Working agreements
 

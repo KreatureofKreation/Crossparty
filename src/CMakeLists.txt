@@ -10,6 +10,8 @@ add_library(crossparty_core STATIC
     core/CookieFormat.h
     core/CookieVault.cpp
     core/CookieVault.h
+    core/MicrophoneStreams.cpp
+    core/MicrophoneStreams.h
     core/NavigationPolicy.cpp
     core/NavigationPolicy.h
     core/PermissionPolicy.cpp
@@ -32,7 +34,7 @@ qt_add_qml_module(crossparty_ui
     URI Crossparty
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
     QML_FILES qml/Main.qml qml/PartyPage.qml qml/TopBar.qml qml/WindowEdges.qml
-    SOURCES core/AppSettings.cpp core/AppSettings.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h
+    SOURCES core/AppSettings.cpp core/AppSettings.h core/MicrophoneMute.cpp core/MicrophoneMute.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h
     NO_IMPORT_SCAN
 )
 
@@ -43,6 +45,7 @@ target_link_libraries(crossparty_ui PUBLIC
     Qt6::Quick
     Qt6::WebEngineQuick
     Qt6::Widgets
+    PkgConfig::Pulse
 )
 
 qt_add_executable(crossparty main.cpp core/SingleInstance.cpp core/SingleInstance.h)

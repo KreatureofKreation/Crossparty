@@ -243,6 +243,33 @@ microphone and session.
 left running with no way to reach it. Only the first copy loads Microsoft's
 page; a second copy exits before creating any web content.
 
+### SEC-014: The mute silences only the app's own microphone stream
+
+**Decision:** The mute works on the recording stream itself, through the
+PulseAudio API that PipeWire provides. The app picks out streams whose
+`pipewire.access.portal.app_id` is its own app ID, and mutes or unmutes only
+those. A new stream (the page reopening the microphone) gets the user's
+choice; a change made elsewhere, such as in Plasma's volume applet, is
+followed.
+
+**Why:** QtWebEngine can only mute what a page plays, and the plan rules out
+scripting Microsoft's page to press its own mute button. Muting the stream
+means Microsoft's page receives silence; nothing about the page changes.
+PipeWire sets the app ID property itself, from the Flatpak sandbox's records,
+so an app cannot claim another app's stream. Inside the sandbox, the app can
+only see its own audio streams anyway (checked on 2026-11-05: other apps'
+streams were not listed).
+
+**Permissions:** none new. The PulseAudio socket is already granted for party
+chat (SEC-012).
+
+**Fail safe:** outside Flatpak there is no trustworthy app ID, so the mute
+button is disabled rather than guessing. If the sound server cannot be
+reached, the button is disabled too.
+
+**Tests:** `tests/MicrophoneStreamsTest.cpp` (which streams count as ours,
+and what happens to new and changed streams).
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

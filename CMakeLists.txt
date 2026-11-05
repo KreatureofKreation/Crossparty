@@ -26,6 +26,9 @@ include(ECMAddTests)
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick Widgets)
 # Encryption for the saved cookies (docs/security.md#sec-009).
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+# Muting our own microphone stream (docs/security.md#sec-014).
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Pulse REQUIRED IMPORTED_TARGET libpulse libpulse-mainloop-glib)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_MIN_VERSION})
