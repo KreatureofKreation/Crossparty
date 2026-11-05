@@ -32,7 +32,7 @@ qt_add_qml_module(crossparty_ui
     URI Crossparty
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
     QML_FILES qml/Main.qml qml/PartyPage.qml qml/TopBar.qml qml/WindowEdges.qml
-    SOURCES core/AppSettings.cpp core/AppSettings.h core/WebSession.cpp core/WebSession.h
+    SOURCES core/AppSettings.cpp core/AppSettings.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h
     NO_IMPORT_SCAN
 )
 
@@ -42,9 +42,10 @@ target_link_libraries(crossparty_ui PUBLIC
     Qt6::Qml
     Qt6::Quick
     Qt6::WebEngineQuick
+    Qt6::Widgets
 )
 
-qt_add_executable(crossparty main.cpp)
+qt_add_executable(crossparty main.cpp core/SingleInstance.cpp core/SingleInstance.h)
 
 target_compile_definitions(crossparty PRIVATE
     CROSSPARTY_APP_ID="${CROSSPARTY_APP_ID}"
@@ -54,7 +55,9 @@ target_compile_definitions(crossparty PRIVATE
 target_link_libraries(crossparty PRIVATE
     crossparty_ui
     crossparty_uiplugin
+    Qt6::DBus
     Qt6::QuickControls2
+    Qt6::Widgets
 )
 
 # Qt is a shared library here (Fedora and the KDE Flatpak runtime), so QML

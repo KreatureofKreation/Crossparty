@@ -224,6 +224,25 @@ allowlist (SEC-010) decides which sites load, and the permission policy
 app is Flathub's own build of QtWebEngine, with Chromium patched so its
 sandbox runs inside Flatpak (spike test 7).
 
+### SEC-013: Tray icon over D-Bus, and one copy at a time
+
+**Decision:** The manifest adds `--talk-name=org.kde.StatusNotifierWatcher`,
+so the app can show its icon in KDE's system tray. The app also claims its own
+app ID on the session bus and answers `org.freedesktop.Application.Activate`;
+a second copy finds the name taken, asks the first to show its window, and
+exits.
+
+**Why:** Closing the window keeps the party running in the tray, so the tray
+icon is the way back to it. The permission lets the app talk to the tray's
+watcher only, not to any other program on the bus. Owning its own app ID
+needs no permission in Flatpak. One copy at a time means there is never a
+second party connection, and never a second process holding the same
+microphone and session.
+
+**Fail safe:** with no tray, closing the window quits the app, so it is never
+left running with no way to reach it. Only the first copy loads Microsoft's
+page; a second copy exits before creating any web content.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

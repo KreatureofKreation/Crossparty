@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2026 KreatureofKreation
 // SPDX-License-Identifier: MIT
 
-#include <QGuiApplication>
+#include "SingleInstance.h"
+
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlExtensionPlugin>
 #include <QQuickStyle>
@@ -24,7 +26,9 @@ int main(int argc, char *argv[])
     // QtWebEngine must be set up before the application object exists.
     QtWebEngineQuick::initialize();
 
-    QGuiApplication app(argc, argv);
+    // QApplication rather than QGuiApplication: the tray menu is a classic
+    // Qt menu.
+    QApplication app(argc, argv);
 
     QGuiApplication::setApplicationName(QStringLiteral("crossparty"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Crossparty"));
@@ -39,6 +43,13 @@ int main(int argc, char *argv[])
     // KDE, unless the user has chosen a style themselves.
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
         QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
+    }
+
+    // Never a second party connection: if Crossparty is already running,
+    // bring its window to the front and stop here.
+    SingleInstance singleInstance;
+    if (!singleInstance.claim()) {
+        return EXIT_SUCCESS;
     }
 
     QQmlApplicationEngine engine;
@@ -56,5 +67,13 @@ int main(int argc, char *argv[])
 
     engine.loadFromModule(u"Crossparty", u"Main");
 
-    return QGuiApplication::exec();
+    // Opening Crossparty again, or activating it from the desktop, shows the
+    // window, even when it is hidden in the tray.
+    QObject::connect(&singleInstance, &SingleInstance::activationRequested, &engine, [&engine] {
+        if (!engine.rootObjects().isEmpty()) {
+            QMetaObject::invokeMethod(engine.rootObjects().constFirst(), "bringToFront");
+        }
+    });
+
+    return QApplication::exec();
 }

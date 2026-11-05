@@ -23,7 +23,7 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMAddTests)
 
-find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick)
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick Widgets)
 # Encryption for the saved cookies (docs/security.md#sec-009).
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)

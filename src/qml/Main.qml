@@ -19,11 +19,46 @@ Kirigami.ApplicationWindow {
     // The top bar replaces KDE's title bar, so KDE draws no frame.
     flags: Qt.Window | Qt.FramelessWindowHint
 
-    // Saved on close, and only for a normal window: a maximised window's size
-    // is the screen's, not one the user chose.
-    onClosing: {
+    // Called from C++ when Crossparty is opened again (main.cpp), and from the
+    // tray.
+    function bringToFront() {
+        show();
+        raise();
+        requestActivate();
+    }
+
+    // Only for a normal window: a maximised window's size is the screen's,
+    // not one the user chose.
+    function saveWindowSize() {
         if (visibility === Window.Windowed) {
             AppSettings.windowSize = Qt.size(width, height);
+        }
+    }
+
+    // Closing sends the app to the tray, so the party keeps going. Quit is in
+    // the tray menu. With no tray, closing quits, so the app is never left
+    // running out of reach.
+    onClosing: close => {
+        saveWindowSize();
+        if (TrayIcon.available) {
+            close.accepted = false;
+            hide();
+        }
+    }
+
+    Connections {
+        target: TrayIcon
+
+        function onShowRequested() {
+            mainWindow.bringToFront();
+        }
+    }
+
+    Connections {
+        target: Qt.application
+
+        function onAboutToQuit() {
+            mainWindow.saveWindowSize();
         }
     }
 

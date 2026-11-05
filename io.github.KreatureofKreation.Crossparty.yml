@@ -28,6 +28,8 @@ finish-args:
   # option, so inside the app only Microsoft's sites get the microphone
   # permission. See docs/security.md#sec-012.
   - --socket=pulseaudio
+  # Show the icon in KDE's system tray. See docs/security.md#sec-013.
+  - --talk-name=org.kde.StatusNotifierWatcher
 
 # Removes the parts of the QtWebEngine base app this app does not use.
 cleanup-commands:
