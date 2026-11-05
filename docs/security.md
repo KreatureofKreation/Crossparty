@@ -108,6 +108,30 @@ before the first connection.
 (`ed25519-sk`) when one is set up, then delete this key from GitHub. With that
 key, the secret cannot be copied at all, and each push needs a physical touch.
 
+### SEC-009: Sign-in cookies are stored encrypted, and nothing else is kept
+
+**Decision:** The app uses an in-memory (off-the-record) QtWebEngine profile,
+so Chromium writes no cookies, Local Storage or IndexedDB to disk. The app
+saves only the cookies itself, encrypted with a key held in the user's keyring
+(KWallet, reached through the XDG Secret portal), and restores them at start.
+
+**Why:** The spike (test 8) showed that QtWebEngine always stores its cookie
+database as plain text, including Microsoft's sign-in cookies and the Xbox Live
+tokens. Anyone who copies that file can act as the account. The plan's rule is
+never to fall back to plain-text storage. The spike also showed that the saved
+cookies alone restore the Microsoft session, with no password needed.
+
+**Cost:** xbox.com keeps its own signed-in state in Local Storage, which is
+dropped on quit. Each launch shows the user signed out until they click Sign in
+and pick their account. Stage 2 will try to remove that click by opening
+xbox.com's sign-in address at start. That is navigation only; it does not
+script Microsoft's page.
+
+**Rejected:** keeping the normal on-disk profile (plain-text tokens readable by
+any unsandboxed program running as the user), and switching to Electron (it
+encrypts cookies but still keeps Local Storage in plain text, and it cannot
+draw the overlay as a layer surface).
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome
