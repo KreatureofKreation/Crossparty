@@ -36,6 +36,19 @@ cleanup-commands:
   - /app/cleanup-BaseApp.sh
 
 modules:
+  # Puts the overlay on the Wayland layer above games. Not in the KDE runtime,
+  # so it is built here, pinned to a release tag and its commit. See
+  # docs/security.md#sec-015.
+  - name: layer-shell-qt
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DBUILD_TESTING=OFF
+    sources:
+      - type: git
+        url: https://invent.kde.org/plasma/layer-shell-qt.git
+        tag: v6.8.2
+        commit: 842f397180f349380e9f7d466c9e746e4dd7faaa
+
   - name: crossparty
     buildsystem: cmake-ninja
     builddir: true

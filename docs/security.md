@@ -270,6 +270,28 @@ reached, the button is disabled too.
 **Tests:** `tests/MicrophoneStreamsTest.cpp` (which streams count as ours,
 and what happens to new and changed streams).
 
+### SEC-015: The overlay is a layer surface that never takes the keyboard
+
+**Decision:** The overlay is a Wayland layer-shell surface on the overlay
+layer, built with LayerShellQt (pinned to v6.8.2 by tag and commit, built
+from source in the manifest). It never takes keyboard focus: it is used with
+the mouse, and opened and closed with the global hotkey. The one live party
+page moves into it while it is open.
+
+**Why:** Layer shell is how Wayland lets panels sit above other windows,
+including full-screen games, without the X11 tricks that would let apps read
+each other's keystrokes. A first version took the keyboard when opened; both
+games tried (Baldur's Gate 3, Dragon's Dogma 2) minimised or left full screen
+as soon as they lost it. With no keyboard, the game keeps focus and the
+overlay can never trap the keyboard. Moving the same page, rather than
+opening a second one, keeps one party connection and one microphone stream.
+
+**Cost:** no typing in the overlay (party text chat stays in window mode),
+and no Esc or click-outside to close it.
+
+**Supply chain:** LayerShellQt is KDE's own library. The manifest pins the
+exact commit, so a moved tag cannot change what is built.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

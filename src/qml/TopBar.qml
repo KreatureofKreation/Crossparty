@@ -8,14 +8,16 @@ import org.kde.kirigami as Kirigami
 import Crossparty
 
 // The window's own title bar, about 36 px tall, in place of KDE's. It follows
-// the system theme and uses system icons. The overlay button joins it with
-// the overlay.
+// the system theme and uses system icons.
 QQC2.ToolBar {
     id: topBar
 
     required property Window window
 
     readonly property bool isMaximised: window.visibility === Window.Maximized
+    property bool overlayOpen: false
+
+    signal overlayToggleRequested
 
     function toggleMaximised() {
         if (isMaximised) {
@@ -54,6 +56,14 @@ QQC2.ToolBar {
             Layout.leftMargin: Kirigami.Units.largeSpacing
             text: topBar.window.title
             elide: Text.ElideRight
+        }
+
+        TopBarButton {
+            text: topBar.overlayOpen ? qsTr("Bring the party back to this window") : qsTr("Open the overlay")
+            icon.name: "window-duplicate"
+            checkable: true
+            checked: topBar.overlayOpen
+            onClicked: topBar.overlayToggleRequested()
         }
 
         // Mutes the microphone itself (MicrophoneMute), and always shows

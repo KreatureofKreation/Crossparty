@@ -41,7 +41,7 @@ plan is recorded here before it is built.
 | IaC tool | OpenTofu | Same language as Terraform, open licence, encrypted state built in |
 | Dev environment | Distrobox container defined in the repo | Keeps tools off the immutable host; reproducible |
 | Overlay | Hidden until summoned, top-right, opens with focus | Used for invites, audio, achievements, then dismissed |
-| Overlay dismiss | Hotkey, Esc, or click outside | Matches Steam overlay habits |
+| Overlay dismiss | Hotkey or the top-bar button _(amended 2026-11-05: Esc and click outside dropped, see Overlay keyboard)_ | Matches Steam overlay habits |
 | Hotkeys | Meta+Shift+X overlay, Meta+Shift+M mute | Mute works everywhere; via KDE's shortcut portal |
 | Click-through | Cut | Overlay is summoned with focus, so not needed |
 | Official support | Plasma 6 Wayland + Gamescope | What can actually be tested; others best effort |
@@ -50,6 +50,8 @@ plan is recorded here before it is built.
 | Cookie key | From the XDG Secret portal (KWallet), encrypted by the app with AES-256-GCM _(amended 2026-11-05)_ | Needs no Flatpak permission. Talking to Secret Service directly would open far more of the keyring than the app needs |
 | Translation | Qt's own system (`qsTr`, Qt Linguist), not KDE's KI18n _(added 2026-11-05)_ | No extra library, and the app is not part of KDE's translation infrastructure |
 | Microphone mute | Mute the app's own recording stream in PipeWire, found by the app ID PipeWire tags it with _(added 2026-11-05)_ | QtWebEngine only mutes page output, and scripting the page is ruled out. Tested: the page hears silence. See SEC-014 |
+| Overlay keyboard | Mouse-only: the overlay never takes the keyboard, and opens and closes by hotkey or the top-bar button _(added 2026-11-05)_ | Games minimise or leave full screen when they lose the keyboard (tested). Replaces "opens with focus" and Esc and click-outside dismiss |
+| Overlay fit | Page zoom 90%, page width 440 CSS px, so xbox.com shows its narrow layout with the party panel filling the overlay _(added 2026-11-05)_ | Uses the page's own layout; nothing is cropped or changed. Same fit at any resolution or scaling |
 | Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
 
@@ -92,6 +94,8 @@ until it is solid.
 - Push-to-talk. The spike showed the portal does report key release, so this
   is possible; it stays here until v0.1.0 _(amended 2026-11-05)_
 - "You're talking while muted" warning
+- A "Type a message" button in the overlay that hands it the keyboard on
+  request, accepting that some games minimise then _(added 2026-11-05)_
 - Hotkey feedback: a short notification ("Microphone muted" / "Microphone
   on") when a hotkey changes something, through the notification portal, shown
   in the overlay over full-screen games. Raised during the spike; the muted
@@ -121,9 +125,12 @@ chrome, and Microsoft's page as the content.
 
 ### Overlay
 
-- Summoned with Meta+Shift+X, top-right, takes focus on open.
-- Dismissed with the same hotkey, Esc, or a click outside.
-- Page zoomed (about 70%, tuned in testing) to fit the compact panel.
+- Summoned with Meta+Shift+X, top-right. Mouse-only: it never takes the
+  keyboard, so games keep focus _(amended 2026-11-05)_.
+- Dismissed with the same hotkey or the top-bar button _(amended
+  2026-11-05)_.
+- Page zoomed to 90% and 440 CSS px wide, so xbox.com's own narrow layout
+  fills the panel with the party view _(amended 2026-11-05)_.
 - Controller input still reaches the game while the overlay is open, so use
   mouse and keyboard in it on desktop.
 - Works over borderless games. Over exclusive full-screen games, taking the
@@ -418,7 +425,8 @@ Results are in [spike.md](spike.md). _(amended 2026-11-05)_
 - Fresh install, sign in, restart: still signed in
 - Join a party, talk both ways, mute and unmute by hotkey
 - Muted badge appears and disappears correctly
-- Overlay opens over a borderless game, closes by hotkey, Esc and click outside
+- Overlay opens over a borderless and a full-screen game, the game keeps
+  focus, and it closes by hotkey _(amended 2026-11-05)_
 - Invite toast appears while the overlay is hidden
 - A link in party chat opens in the default browser, not in the app
 - Sign out and wipe leaves no session data
@@ -502,13 +510,11 @@ answered it before any real build. _(amended 2026-11-05)_
 
 ### Open questions
 
-- After leaving a party, starting a new one sometimes fails with "we can't do
-  this right now". Starting and leaving a party on the phone clears it. Likely
-  Microsoft's party service keeping the old party open. Next time it happens,
-  try the same in Firefox: if it happens there too, it is Microsoft's side and
-  out of reach (the app never scripts the page). If not, look at what the app
-  does differently, for example the page being throttled while the window is
-  hidden in the tray. _(added 2026-11-05)_
+- ~~After leaving a party, starting a new one sometimes fails with "we can't
+  do this right now".~~ It happens in Firefox too, so it is Microsoft's party
+  service keeping the old party open, and out of the app's reach. Workaround:
+  start and leave a party on the phone (or another device), which clears it.
+  To go in the README's known issues. _(answered 2026-11-05)_
 
 - ~~Does the shortcuts portal report key release (push-to-talk)?~~ Yes (spike
   test 6). KDE sends 0 for every timestamp, so the app times presses itself.

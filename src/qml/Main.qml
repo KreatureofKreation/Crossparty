@@ -7,8 +7,8 @@ import org.kde.kirigami as Kirigami
 import Crossparty
 
 // Window mode: the app's own top bar, with the party page filling the rest.
-// The overlay and handheld modes will be their own views around the same
-// PartyPage and the same core objects.
+// The overlay borrows the same live page while it is open; handheld mode will
+// do the same.
 Kirigami.ApplicationWindow {
     id: mainWindow
 
@@ -18,6 +18,32 @@ Kirigami.ApplicationWindow {
     height: AppSettings.windowSize.height > 0 ? AppSettings.windowSize.height : Kirigami.Units.gridUnit * 30
     // The top bar replaces KDE's title bar, so KDE draws no frame.
     flags: Qt.Window | Qt.FramelessWindowHint
+
+    property bool overlayOpen: false
+
+    // The one live page moves into the overlay and back, so the party never
+    // reconnects (docs/plan.md, Overlay content).
+    function openOverlay() {
+        overlay.show();
+        partyPage.parent = overlay.contentItem;
+        partyPage.zoomFactor = overlay.pageZoom;
+        overlayOpen = true;
+    }
+
+    function closeOverlay() {
+        partyPage.parent = pageHolder;
+        partyPage.zoomFactor = 1;
+        overlay.hide();
+        overlayOpen = false;
+    }
+
+    function toggleOverlay() {
+        if (overlayOpen) {
+            closeOverlay();
+        } else {
+            openOverlay();
+        }
+    }
 
     // Called from C++ when Crossparty is opened again (main.cpp), and from the
     // tray.
@@ -52,6 +78,10 @@ Kirigami.ApplicationWindow {
         function onMuteToggleRequested() {
             MicrophoneMute.toggle();
         }
+
+        function onOverlayToggleRequested() {
+            mainWindow.toggleOverlay();
+        }
     }
 
     Connections {
@@ -77,12 +107,35 @@ Kirigami.ApplicationWindow {
         TopBar {
             Layout.fillWidth: true
             window: mainWindow
+            overlayOpen: mainWindow.overlayOpen
+            onOverlayToggleRequested: mainWindow.toggleOverlay()
         }
 
-        PartyPage {
+        Item {
+            id: pageHolder
+
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            PartyPage {
+                id: partyPage
+
+                anchors.fill: parent
+            }
+
+            Kirigami.PlaceholderMessage {
+                anchors.centerIn: parent
+                width: parent.width - Kirigami.Units.gridUnit * 4
+                visible: mainWindow.overlayOpen
+                icon.name: "window-duplicate"
+                text: qsTr("The party is in the overlay")
+                explanation: qsTr("Press Meta+Shift+X to bring it back here.")
+            }
         }
+    }
+
+    OverlayWindow {
+        id: overlay
     }
 
     // Above everything else, so the edges can be grabbed over the page too.
