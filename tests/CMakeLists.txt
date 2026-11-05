@@ -1,8 +1,9 @@
 # SPDX-FileCopyrightText: 2026 KreatureofKreation
 # SPDX-License-Identifier: MIT
 
-# The security policies: one test per policy, run on every build.
-foreach(policyTest SiteAllowlistTest NavigationPolicyTest PermissionPolicyTest)
+# The security policies and sign-in storage: one test each, run on every
+# build.
+foreach(policyTest SiteAllowlistTest NavigationPolicyTest PermissionPolicyTest CookieCipherTest CookieFormatTest)
     ecm_add_test(${policyTest}.cpp
         TEST_NAME ${policyTest}
         LINK_LIBRARIES Qt6::Test crossparty_core

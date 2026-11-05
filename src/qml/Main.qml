@@ -21,7 +21,8 @@ Kirigami.ApplicationWindow {
 
         anchors.fill: parent
         profile: WebSession.profile
-        url: WebSession.startUrl
+        // Waits for the saved sign-in to be restored first.
+        url: WebSession.ready ? WebSession.startUrl : ""
 
         onNavigationRequested: request => WebSession.handleNavigation(request)
         onNewWindowRequested: request => {

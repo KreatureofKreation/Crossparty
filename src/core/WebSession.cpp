@@ -3,12 +3,17 @@
 
 #include "WebSession.h"
 
+#include "CookieVault.h"
 #include "NavigationPolicy.h"
 #include "PermissionPolicy.h"
+#include "SecretPortal.h"
 
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QLoggingCategory>
 #include <QQuickWebEngineDownloadRequest>
+#include <QStandardPaths>
+#include <QWebEngineCookieStore>
 
 Q_LOGGING_CATEGORY(lcWeb, "crossparty.web", QtInfoMsg)
 
@@ -29,6 +34,13 @@ void openInBrowser(const QUrl &url)
     qCInfo(lcWeb) << "Opening in the default browser:" << describeForLog(url);
     QDesktopServices::openUrl(url);
 }
+
+// Inside Flatpak this is the app's own data folder, which no other app can
+// read.
+QString cookieFilePath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/cookies.vault");
+}
 }
 
 WebSession::WebSession(QObject *parent)
@@ -41,6 +53,8 @@ WebSession::WebSession(QObject *parent)
     // That type has no C++ API, and creating the profile here keeps the
     // in-memory guarantee in the core, so the warning is expected for now.
     , m_profile(new QQuickWebEngineProfile(this))
+    , m_cookieVault(new CookieVault(m_profile->cookieStore(), cookieFilePath(), this))
+    , m_secretPortal(new SecretPortal(this))
 {
     if (!m_profile->isOffTheRecord()) {
         // Fail safe: never run with a profile that would write session data
@@ -54,6 +68,40 @@ WebSession::WebSession(QObject *parent)
         qCInfo(lcWeb) << "Download refused";
         download->cancel();
     });
+
+    // Save any last change before the app exits.
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, m_cookieVault, &CookieVault::saveNow);
+
+    connect(m_secretPortal, &SecretPortal::secretReady, this, &WebSession::onSecretReady);
+    connect(m_secretPortal, &SecretPortal::secretUnavailable, this, &WebSession::onSecretUnavailable);
+    m_secretPortal->requestSecret();
+}
+
+void WebSession::onSecretReady(const QByteArray &secret)
+{
+    m_cookieVault->unlockAndRestore(secret);
+    setReady();
+}
+
+void WebSession::onSecretUnavailable(const QString &reason)
+{
+    // Fail safe: without a key, sign-in is simply not saved. The app still
+    // works; the user signs in again next time.
+    qCWarning(lcWeb) << "No key for saved sign-in:" << reason;
+    setReady();
+}
+
+void WebSession::setReady()
+{
+    if (!m_ready) {
+        m_ready = true;
+        Q_EMIT readyChanged();
+    }
+}
+
+bool WebSession::isReady() const
+{
+    return m_ready;
 }
 
 QQuickWebEngineProfile *WebSession::profile() const

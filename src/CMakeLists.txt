@@ -1,18 +1,26 @@
 # SPDX-FileCopyrightText: 2026 KreatureofKreation
 # SPDX-License-Identifier: MIT
 
-# The security policies: plain C++ with no interface, so the unit tests can
-# check every decision directly.
+# The security policies and sign-in storage: plain C++ with no interface, so
+# the unit tests can check every decision directly.
 add_library(crossparty_core STATIC
+    core/CookieCipher.cpp
+    core/CookieCipher.h
+    core/CookieFormat.cpp
+    core/CookieFormat.h
+    core/CookieVault.cpp
+    core/CookieVault.h
     core/NavigationPolicy.cpp
     core/NavigationPolicy.h
     core/PermissionPolicy.cpp
     core/PermissionPolicy.h
+    core/SecretPortal.cpp
+    core/SecretPortal.h
     core/SiteAllowlist.cpp
     core/SiteAllowlist.h
 )
 target_include_directories(crossparty_core PUBLIC core)
-target_link_libraries(crossparty_core PUBLIC Qt6::Core Qt6::WebEngineCore)
+target_link_libraries(crossparty_core PUBLIC Qt6::Core Qt6::DBus Qt6::Network Qt6::WebEngineCore PRIVATE OpenSSL::Crypto)
 
 # The interface and the objects it talks to, as a QML module. It is a library
 # so the tests can load exactly the same module as the app.

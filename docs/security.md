@@ -127,6 +127,34 @@ and pick their account. Stage 2 will try to remove that click by opening
 xbox.com's sign-in address at start. That is navigation only; it does not
 script Microsoft's page.
 
+**How it works:**
+
+- The key comes from the XDG Secret portal, which KDE backs with KWallet. The
+  portal gives each Flatpak app its own secret, tied to the app ID, and needs
+  no Flatpak permission. It writes the secret into a pipe the app hands it,
+  so the secret never travels over D-Bus. The app turns it into a 32-byte key
+  for this one purpose with HKDF-SHA256.
+- Cookies are encrypted with AES-256-GCM (OpenSSL), with a new random nonce on
+  every save. GCM also detects any change to the file: a changed, cut-short or
+  foreign file fails to decrypt, and is then deleted, so the user starts
+  signed out.
+- The file is `cookies.vault` in the app's own data folder, owner-only (600),
+  written atomically so a crash never leaves half a file. Expired cookies are
+  left out. Session cookies are kept, because the spike showed sign-in needs
+  them.
+- Fail safe: if the portal refuses, KWallet stays locked for 60 seconds, or
+  the key cannot be made, nothing is saved. The app still works; the user
+  signs in again next time.
+- Host-only cookies are restored without a domain. With one, Chromium refuses
+  Microsoft's `__Host-` sign-in cookie (found in the spike).
+- Tests: `tests/CookieCipherTest.cpp` (round trips, fresh nonces, wrong key,
+  every changed byte) and `tests/CookieFormatTest.cpp`.
+
+**Limit:** anything that can run code as the user and reach KWallet while it
+is unlocked can still ask for the secret, the same as for any keyring. This
+protects against the cookie file being copied or read on its own, which is
+what the plain-text database allowed.
+
 **Rejected:** keeping the normal on-disk profile (plain-text tokens readable by
 any unsandboxed program running as the user), and switching to Electron (it
 encrypts cookies but still keeps Local Storage in plain text, and it cannot
