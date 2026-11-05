@@ -502,6 +502,14 @@ answered it before any real build. _(amended 2026-11-05)_
 
 ### Open questions
 
+- After leaving a party, starting a new one sometimes fails with "we can't do
+  this right now". Starting and leaving a party on the phone clears it. Likely
+  Microsoft's party service keeping the old party open. Next time it happens,
+  try the same in Firefox: if it happens there too, it is Microsoft's side and
+  out of reach (the app never scripts the page). If not, look at what the app
+  does differently, for example the page being throttled while the window is
+  hidden in the tray. _(added 2026-11-05)_
+
 - ~~Does the shortcuts portal report key release (push-to-talk)?~~ Yes (spike
   test 6). KDE sends 0 for every timestamp, so the app times presses itself.
   _(amended 2026-11-05)_

@@ -109,6 +109,7 @@ void MicrophoneMute::onContextState(pa_context *context, void *self)
     case PA_CONTEXT_FAILED:
     case PA_CONTEXT_TERMINATED:
         mute->m_streams.clear();
+        mute->m_pendingMuteChanges = 0;
         mute->setAvailable(false);
         return;
     default:
