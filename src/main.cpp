@@ -14,6 +14,13 @@ Q_IMPORT_QML_PLUGIN(CrosspartyPlugin)
 
 int main(int argc, char *argv[])
 {
+    // Thin scroll bars that sit over the page and fade out when not in use,
+    // like Plasma's own. This is a browser setting, not a change to
+    // Microsoft's page. Any flags the user set themselves are kept.
+    QByteArray chromiumFlags = qgetenv("QTWEBENGINE_CHROMIUM_FLAGS");
+    chromiumFlags.append(" --enable-features=FluentOverlayScrollbar");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags);
+
     // QtWebEngine must be set up before the application object exists.
     QtWebEngineQuick::initialize();
 
