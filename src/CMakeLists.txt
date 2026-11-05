@@ -16,6 +16,8 @@ add_library(crossparty_core STATIC
     core/NavigationPolicy.h
     core/PermissionPolicy.cpp
     core/PermissionPolicy.h
+    core/PortalRequest.cpp
+    core/PortalRequest.h
     core/SecretPortal.cpp
     core/SecretPortal.h
     core/SettingsFile.cpp
@@ -34,7 +36,7 @@ qt_add_qml_module(crossparty_ui
     URI Crossparty
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
     QML_FILES qml/Main.qml qml/PartyPage.qml qml/TopBar.qml qml/WindowEdges.qml
-    SOURCES core/AppSettings.cpp core/AppSettings.h core/MicrophoneMute.cpp core/MicrophoneMute.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h
+    SOURCES core/AppSettings.cpp core/AppSettings.h core/GlobalShortcuts.cpp core/GlobalShortcuts.h core/MicrophoneMute.cpp core/MicrophoneMute.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h
     NO_IMPORT_SCAN
 )
 

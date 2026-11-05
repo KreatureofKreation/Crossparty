@@ -3,6 +3,8 @@
 
 #include "SecretPortal.h"
 
+#include "PortalRequest.h"
+
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusUnixFileDescriptor>
@@ -21,16 +23,6 @@ const char requestToken[] = "crossparty_secret";
 // KWallet may first ask the user to unlock it. After this long the app goes
 // on without saved cookies rather than wait on a blank window.
 constexpr std::chrono::seconds unlockTimeout{60};
-
-// The portal answers on a Request object whose path is built from our bus
-// name and the token we choose. We listen there before calling, so the answer
-// cannot arrive before we are ready for it.
-QString requestPath()
-{
-    QString sender = QDBusConnection::sessionBus().baseService().mid(1);
-    sender.replace(QLatin1Char('.'), QLatin1Char('_'));
-    return QStringLiteral("/org/freedesktop/portal/desktop/request/%1/%2").arg(sender, QLatin1String(requestToken));
-}
 }
 
 SecretPortal::SecretPortal(QObject *parent)
@@ -66,8 +58,9 @@ void SecretPortal::requestSecret()
     QDBusConnection bus = QDBusConnection::sessionBus();
     // Qt's D-Bus signals only connect by name. The formatter is kept off this
     // line because it would add a space that clazy rejects.
+    const QString responsePath = PortalRequest::path(bus.baseService(), QLatin1String(requestToken));
     // clang-format off
-    bus.connect(QLatin1String(portalService), requestPath(), QStringLiteral("org.freedesktop.portal.Request"), QStringLiteral("Response"),
+    bus.connect(QLatin1String(portalService), responsePath, QStringLiteral("org.freedesktop.portal.Request"), QStringLiteral("Response"),
                 this, SLOT(onResponse(uint,QVariantMap)));
     // clang-format on
 

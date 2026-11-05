@@ -47,6 +47,7 @@ private:
     static void onContextState(pa_context *context, void *self);
     static void onStreamEvent(pa_context *context, pa_subscription_event_type_t eventType, uint32_t index, void *self);
     static void onStreamInfo(pa_context *context, const pa_source_output_info *info, int isLast, void *self);
+    static void onMuteApplied(pa_context *context, int success, void *self);
 
     void handleStream(const pa_source_output_info &info);
     void setStreamMuted(uint32_t index, bool muted);
@@ -59,4 +60,8 @@ private:
     QHash<uint32_t, bool> m_streams;
     bool m_muted = false;
     bool m_available = false;
+    // Mute changes sent to the sound server and not yet confirmed. While any
+    // are in flight, a stream report may still show the old state, and must
+    // not be mistaken for the user changing it elsewhere.
+    int m_pendingMuteChanges = 0;
 };

@@ -153,6 +153,12 @@ void MicrophoneMute::handleStream(const pa_source_output_info &info)
         setStreamMuted(info.index, m_muted);
         return;
     case MicrophoneStreams::MuteAction::AdoptStreamState:
+        if (m_pendingMuteChanges > 0) {
+            // Fail safe: an out-of-date report must never undo a mute the
+            // user just asked for. The confirmed state arrives in a later
+            // report.
+            return;
+        }
         m_muted = streamIsMuted;
         qCInfo(lcMicrophone) << "Mute changed outside the app; following it";
         Q_EMIT mutedChanged();
@@ -163,5 +169,19 @@ void MicrophoneMute::handleStream(const pa_source_output_info &info)
 void MicrophoneMute::setStreamMuted(uint32_t index, bool muted)
 {
     m_streams.insert(index, muted);
-    finish(pa_context_set_source_output_mute(m_context, index, muted ? 1 : 0, nullptr, nullptr));
+    pa_operation *operation = pa_context_set_source_output_mute(m_context, index, muted ? 1 : 0, &MicrophoneMute::onMuteApplied, this);
+    if (operation) {
+        ++m_pendingMuteChanges;
+        pa_operation_unref(operation);
+    }
+}
+
+void MicrophoneMute::onMuteApplied(pa_context *context, int success, void *self)
+{
+    Q_UNUSED(context)
+    auto *mute = static_cast<MicrophoneMute *>(self);
+    --mute->m_pendingMuteChanges;
+    if (success == 0) {
+        qCWarning(lcMicrophone) << "The sound server refused a mute change";
+    }
 }

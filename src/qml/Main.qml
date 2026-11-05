@@ -47,6 +47,14 @@ Kirigami.ApplicationWindow {
     }
 
     Connections {
+        target: GlobalShortcuts
+
+        function onMuteToggleRequested() {
+            MicrophoneMute.toggle();
+        }
+    }
+
+    Connections {
         target: TrayIcon
 
         function onShowRequested() {

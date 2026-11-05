@@ -3,7 +3,7 @@
 
 # The core pieces with no interface: one test each, run on every
 # build.
-foreach(coreTest SiteAllowlistTest NavigationPolicyTest PermissionPolicyTest CookieCipherTest CookieFormatTest SettingsFileTest MicrophoneStreamsTest)
+foreach(coreTest SiteAllowlistTest NavigationPolicyTest PermissionPolicyTest CookieCipherTest CookieFormatTest SettingsFileTest MicrophoneStreamsTest PortalRequestTest)
     ecm_add_test(${coreTest}.cpp
         TEST_NAME ${coreTest}
         LINK_LIBRARIES Qt6::Test crossparty_core
