@@ -458,11 +458,17 @@ Results are in [spike.md](spike.md). _(amended 2026-11-05)_
 
 - Fresh install, sign in, restart: still signed in
 - Join a party, talk both ways, mute and unmute by hotkey
+- Restart the sound server while muted (`systemctl --user restart
+  pipewire-pulse`): the app shows the mute as unavailable, never "muted",
+  and mute works again within seconds _(added 2026-11-07)_
+- Hotkey hints in the overlay and toasts show the keys actually set
+  _(added 2026-11-07)_
 - Muted badge appears and disappears correctly
 - Overlay opens over a borderless and a full-screen game, the game keeps
   focus, and it closes by hotkey _(amended 2026-11-05)_
 - Invite toast appears while the overlay is hidden
-- A link in party chat opens in the default browser, not in the app
+- A link in party chat opens in the default browser, not in the app, and
+  the party carries on _(amended 2026-11-07)_
 - Sign out and wipe leaves no session data
 - Nested Gamescope: handheld mode opens full screen and is
   controller-navigable
@@ -506,7 +512,7 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 | 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | Done _(amended 2026-11-06)_ |
 | 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Done _(amended 2026-11-06)_ |
 | 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | Done _(amended 2026-11-07)_ |
-| 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | Next |
+| 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | Done: v0.1.0 on GitHub. Flathub submission is its own step _(amended 2026-11-07)_ |
 
 ### Stage 6 pull requests _(added 2026-11-07)_
 
@@ -519,8 +525,13 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    bundle for a tagged release on main and publishes it with a checksum and
    a signed build provenance attestation (SEC-023). Screenshots move to the
    Flathub submission, which is what needs them.
-4. Release: the manual checklist on staging, staging merged into main, and
-   v0.1.0 tagged. Flathub submission follows as its own step.
+4. Code review fixes: a full review of the code before the first release,
+   and fixes for all ten findings (mute fail-safe and reconnection, new
+   windows never replacing the party page, tokened invite reports, honest
+   wipe failures, real hotkey hints, page check limits, an early tag check).
+5. Release: CHANGELOG dated, the manual checklist on staging, staging
+   merged into main, and v0.1.0 tagged. Flathub submission follows as its
+   own step.
 
 ### Stage 5 pull requests _(added 2026-11-06)_
 
