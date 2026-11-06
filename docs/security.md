@@ -561,6 +561,41 @@ manage, is turned on by hand once (infra/github/README.md).
 **Tests:** `tofu fmt` runs in dev/lint.sh; `tofu validate` was run when the
 config was written. Each apply is checked by reading its plan first.
 
+### SEC-022: Weekly checks run signed out, and only a separate job can open issues
+
+**Decision:** A scheduled workflow runs weekly:
+
+- `tools/PageCheck` loads Microsoft's page signed out at the overlay's narrow
+  width. It fails if the page goes to a host outside the allowlist, or if the
+  Guide button the invite watcher reads is gone.
+- `dev/check-updates.sh` compares the manifest with the newest KDE runtime,
+  QtWebEngine base app and layer-shell-qt.
+
+A failure opens a GitHub issue, or comments on the open one.
+
+**Why:** Microsoft can change its page, and upstream projects can ship
+fixes, without anything changing here. A weekly check finds out before users
+do. The checks run signed out because a signed-in check would need a
+Microsoft account's password or tokens stored in CI.
+
+**Permissions:** opening issues needs `issues: write`, a second exception to
+SEC-003's read-only token. Only the reporting job gets it, and that job
+checks out nothing, runs none of the repository's code and never reads the
+checks' output, so nothing from Microsoft's page or the network can reach a
+step that holds the write token. Its issue text is fixed, with a link to
+the run.
+
+**Sandbox:** Chromium's own sandbox cannot start inside a Docker container,
+so the page check turns it off (`QTWEBENGINE_DISABLE_SANDBOX=1`). Only this
+CI job does: it loads only Microsoft's page, signed out, holds no secrets
+and runs on a throwaway machine. The app always runs with the sandbox on
+(SEC-012).
+
+**Tests:** both checks were run against the live services when written, and
+`dev/check-updates.sh` was also run against an older runtime version to see
+it fail. `tests/SiteAllowlistTest.cpp` checks that the start page shared by
+the app and the page check is on the allowlist.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

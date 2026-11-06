@@ -16,6 +16,7 @@ private Q_SLOTS:
     void decidesWhatLoadsInTheApp_data();
     void decidesWhatLoadsInTheApp();
     void listsOnlyExactHosts();
+    void startPageIsAllowed();
 };
 
 void SiteAllowlistTest::decidesWhatLoadsInTheApp_data()
@@ -73,6 +74,12 @@ void SiteAllowlistTest::listsOnlyExactHosts()
         QVERIFY2(!host.contains(QLatin1Char('*')), qPrintable(host));
         QCOMPARE(host, host.toLower());
     }
+}
+
+void SiteAllowlistTest::startPageIsAllowed()
+{
+    // The app's first page must load inside the app, never in the browser.
+    QVERIFY(SiteAllowlist::isAllowedInApp(SiteAllowlist::startUrl()));
 }
 
 QTEST_GUILESS_MAIN(SiteAllowlistTest)

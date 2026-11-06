@@ -33,6 +33,13 @@ QStringList SiteAllowlist::allowedHosts()
     };
 }
 
+QUrl SiteAllowlist::startUrl()
+{
+    // The older www.xbox.com/play page has no invite count for the invite
+    // watcher to read (SEC-017), and sign-in already sends people here.
+    return QUrl(QStringLiteral("https://play.xbox.com/"));
+}
+
 bool SiteAllowlist::isAllowedInApp(const QUrl &url)
 {
     if (!url.isValid() || url.scheme() != QLatin1String("https")) {

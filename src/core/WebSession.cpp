@@ -162,10 +162,7 @@ QQuickWebEngineProfile *WebSession::profile() const
 
 QUrl WebSession::startUrl() const
 {
-    // Microsoft's newer Xbox web app. The older www.xbox.com/play page has no
-    // invite count for the invite watcher to read (SEC-017), and sign-in
-    // already sends people here.
-    return QUrl(QStringLiteral("https://play.xbox.com/"));
+    return SiteAllowlist::startUrl();
 }
 
 void WebSession::handleNavigation(QWebEngineNavigationRequest *request) const
