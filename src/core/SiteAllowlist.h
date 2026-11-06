@@ -15,6 +15,10 @@ namespace SiteAllowlist
 // "www.xbox.com.example.net" can never match.
 QStringList allowedHosts();
 
+// The page the app opens: Microsoft's newer Xbox web app. The weekly page
+// check (tools/PageCheck.cpp) loads the same address.
+QUrl startUrl();
+
 // True only for https addresses on an allowed host, on the standard port, with
 // no user name or password in the address.
 bool isAllowedInApp(const QUrl &url);

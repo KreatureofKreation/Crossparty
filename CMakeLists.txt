@@ -42,6 +42,13 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
+# The weekly page check needs the network, so it is built only when asked
+# for: by dev/lint.sh, so it is linted, and by the scheduled checks in CI.
+option(CROSSPARTY_BUILD_PAGE_CHECK "Build tools/PageCheck, the weekly check of Microsoft's page" OFF)
+if(CROSSPARTY_BUILD_PAGE_CHECK)
+    add_subdirectory(tools)
+endif()
+
 install(FILES data/${CROSSPARTY_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 install(FILES data/${CROSSPARTY_APP_ID}.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
 install(FILES data/icons/${CROSSPARTY_APP_ID}.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)

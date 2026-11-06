@@ -397,6 +397,10 @@ and scheduled checks catch breakage before users report it.
   agent, and do the allowlisted origins still match where it redirects?
 - Is there a newer KDE runtime or dependency release waiting?
 - Results open a GitHub issue automatically when something fails.
+- Built in stage 6 _(added 2026-11-07)_: `.github/workflows/scheduled-checks.yml`
+  runs `tools/PageCheck` and `dev/check-updates.sh` every Monday, and
+  whenever either changes. GitHub runs scheduled workflows only from main, so
+  the weekly runs start with the first release (SEC-022).
 
 **Limit:** these checks run signed out. A signed-in check would need a
 Microsoft account's credentials stored in CI, which breaks the "no secrets in
@@ -509,7 +513,8 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 1. Docs: README (install, first start, handheld, support, known issues,
    privacy), CHANGELOG for 0.1.0, the revoke-and-rotate plan in SECURITY.md,
    CONTRIBUTING's pull-request workflow, and plan corrections.
-2. Weekly scheduled checks in CI that open an issue when something breaks.
+2. Weekly scheduled checks in CI that open an issue when something breaks:
+   the page signed out, and updates waiting (SEC-022).
 3. Release build: screenshots, version 0.1.0, and a CI job that builds the
    Flatpak bundle for a tagged release.
 4. Release: the manual checklist on staging, staging merged into main, and

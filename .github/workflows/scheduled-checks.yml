@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# Weekly checks for breakage Microsoft or upstream projects can cause without
+# any change here (docs/plan.md, Scheduled checks). A failure opens a GitHub
+# issue, or adds to the open one. Signed out only: no account and no secrets
+# are ever given to CI. See docs/security.md#sec-022.
+#
+# GitHub runs scheduled workflows only from the default branch (main), so
+# the weekly runs start once this reaches main. A push that changes a check
+# runs it straight away.
+
+name: Scheduled checks
+
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/scheduled-checks.yml
+      - dev/check-updates.sh
+      - tools/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  page:
+    name: Microsoft's page
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the dev container
+        run: docker build --tag crossparty-dev --file dev/Containerfile dev
+
+      # Chromium's own sandbox cannot start inside a Docker container, so it
+      # is turned off for this one check: it only ever loads Microsoft's page,
+      # signed out, on a runner that is thrown away afterwards.
+      - name: Load the page signed out and check it
+        run: >
+          docker run --rm
+          --volume "$PWD:/src"
+          --workdir /src
+          --env QT_QPA_PLATFORM=offscreen
+          --env QTWEBENGINE_DISABLE_SANDBOX=1
+          crossparty-dev sh -c
+          'cmake -S . -B build/page -G Ninja -DBUILD_TESTING=OFF -DCROSSPARTY_BUILD_PAGE_CHECK=ON
+          && cmake --build build/page --target PageCheck
+          && build/page/bin/PageCheck'
+
+  updates:
+    name: Updates waiting
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Flatpak
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends flatpak
+
+      - name: Compare the manifest with the newest releases
+        run: dev/check-updates.sh
+
+  # Kept apart from the checks: this job alone can write issues, and it never
+  # checks out or runs the repository's code, nor reads the checks' output.
+  report:
+    name: Open an issue
+    needs: [page, updates]
+    if: always() && github.event_name != 'push' && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update an issue for each failed check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PAGE_RESULT: ${{ needs.page.result }}
+          UPDATES_RESULT: ${{ needs.updates.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          report() {
+            local title="$1" body="$2" existing
+            existing="$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')"
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "$body"
+            else
+              gh issue create --title "$title" --body "$body"
+            fi
+          }
+          if [ "$PAGE_RESULT" = failure ]; then
+            report "Weekly check failed: Microsoft's page" \
+              "The page check failed: Microsoft's page may have moved to a host outside the allowlist, or the narrow layout lost the Guide button the invite alerts read. Details in $RUN_URL"
+          fi
+          if [ "$UPDATES_RESULT" = failure ]; then
+            report "Weekly check: updates waiting" \
+              "A newer KDE runtime, QtWebEngine base app or layer-shell-qt is available. Details in $RUN_URL"
+          fi
