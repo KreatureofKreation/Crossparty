@@ -61,3 +61,10 @@ jobs:
           manifest-path: io.github.KreatureofKreation.Crossparty.yml
           bundle: crossparty.flatpak
           cache-key: flatpak-builder-${{ hashFiles('io.github.KreatureofKreation.Crossparty.yml') }}
+
+      # Flathub's own rules, on the manifest and the exported build, with the
+      # same recorded exceptions as dev/flatpak-build.sh.
+      - name: Lint with flatpak-builder-lint
+        run: |
+          flatpak-builder-lint --exceptions --user-exceptions dev/flatpak-lint-exceptions.json manifest io.github.KreatureofKreation.Crossparty.yml
+          flatpak-builder-lint --exceptions --user-exceptions dev/flatpak-lint-exceptions.json repo repo

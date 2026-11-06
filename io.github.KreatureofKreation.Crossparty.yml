@@ -9,16 +9,52 @@ id: io.github.KreatureofKreation.Crossparty
 runtime: org.kde.Platform
 runtime-version: '6.11'
 sdk: org.kde.Sdk
+# QtWebEngine is not in the KDE runtime. Flathub's base app supplies it, with
+# Chromium patched to run its own sandbox inside Flatpak (spike test 7).
+base: io.qt.qtwebengine.BaseApp
+base-version: '6.11'
 command: crossparty
 
 finish-args:
-  # Display. Native Wayland only, with no X11 socket: X11 apps can read other
-  # apps' keystrokes, including games on XWayland.
+  # Display. Wayland on the desktop, with no X11 socket there: X11 apps can
+  # read other apps' keystrokes, including games on XWayland.
   - --socket=wayland
-  # GPU acceleration for Qt Quick.
+  # X11 only when there is no Wayland at all, which is Steam's Game Mode:
+  # Gamescope offers apps nothing else. See docs/security.md#sec-019.
+  - --socket=fallback-x11
+  # Required with X11: its shared-memory images need the host's IPC
+  # namespace, and Flathub rejects X11 without it. See docs/security.md#sec-019.
+  - --share=ipc
+  # GPU acceleration for Qt Quick and the web page.
   - --device=dri
+  # Reach Microsoft's servers. Which sites load inside the app is decided by
+  # the site allowlist. See docs/security.md#sec-012.
+  - --share=network
+  # Microphone and speakers for party chat. Flatpak has no microphone-only
+  # option, so inside the app only Microsoft's sites get the microphone
+  # permission. See docs/security.md#sec-012.
+  - --socket=pulseaudio
+  # Show the icon in KDE's system tray. See docs/security.md#sec-013.
+  - --talk-name=org.kde.StatusNotifierWatcher
+
+# Removes the parts of the QtWebEngine base app this app does not use.
+cleanup-commands:
+  - /app/cleanup-BaseApp.sh
 
 modules:
+  # Puts the overlay on the Wayland layer above games. Not in the KDE runtime,
+  # so it is built here, pinned to a release tag and its commit. See
+  # docs/security.md#sec-015.
+  - name: layer-shell-qt
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DBUILD_TESTING=OFF
+    sources:
+      - type: git
+        url: https://invent.kde.org/plasma/layer-shell-qt.git
+        tag: v6.8.2
+        commit: 842f397180f349380e9f7d466c9e746e4dd7faaa
+
   - name: crossparty
     buildsystem: cmake-ninja
     builddir: true

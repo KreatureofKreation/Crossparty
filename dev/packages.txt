@@ -12,6 +12,10 @@ extra-cmake-modules
 qt6-qtbase-devel
 qt6-qtdeclarative-devel
 qt6-qtwebengine-devel
+# Encryption for the saved cookies (AES-256-GCM)
+openssl-devel
+# Muting our own microphone stream (PulseAudio API on PipeWire)
+pulseaudio-libs-devel
 qt6-qttools-devel
 kf6-kirigami-devel
 layer-shell-qt-devel

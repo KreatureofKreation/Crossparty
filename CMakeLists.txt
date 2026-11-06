@@ -23,7 +23,12 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMAddTests)
 
-find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Test)
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick Widgets)
+# Encryption for the saved cookies (docs/security.md#sec-009).
+find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+# Muting our own microphone stream (docs/security.md#sec-014).
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Pulse REQUIRED IMPORTED_TARGET libpulse libpulse-mainloop-glib)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_MIN_VERSION})
@@ -38,3 +43,5 @@ if(BUILD_TESTING)
 endif()
 
 install(FILES data/${CROSSPARTY_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES data/${CROSSPARTY_APP_ID}.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+install(FILES data/icons/${CROSSPARTY_APP_ID}.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)

@@ -4,9 +4,95 @@ This file explains every security decision in Crossparty, in plain English.
 Code that makes one of these decisions links here with a comment such as
 `docs/security.md#sec-001`.
 
-The full threat model (assets, threats and controls) is written up in
-stage 5. Until then, the Security and threat model section of the project
-plan is the reference.
+The threat model below says what is protected, from whom, and how. Each
+control links to the decision that explains it, and what the controls cannot
+stop is listed plainly under Accepted risks.
+
+## Threat model
+
+_Written in stage 5, 2026-11-06. Reviewed at every release, and whenever a
+Flatpak permission, an allowed host or a new SEC entry is added._
+
+### What Crossparty is
+
+A Flatpak app that shows Microsoft's Xbox web app (play.xbox.com) in a KDE
+window, an overlay above games and a handheld layout. Microsoft's page does
+the party chat; Crossparty decides what that page may load, what it may use,
+and what is kept on disk. It runs no server, has no account of its own and
+sends nothing anywhere except the page's own traffic to Microsoft.
+
+### Trust boundaries
+
+Data crossing these lines is checked; nothing inside a line is trusted to
+check itself.
+
+1. **Party chat to the page.** Other players' text and links arrive inside
+   Microsoft's page. Microsoft is trusted to run its own service; what other
+   players send is not.
+2. **The page to the app.** The page can ask to navigate, open windows, use
+   permissions and write console messages. The C++ core decides every one
+   (SEC-010, SEC-011, SEC-017).
+3. **The app to the desktop.** Flatpak's sandbox, with Chromium's own sandbox
+   inside it (SEC-012). The app reaches the desktop only through the listed
+   Flatpak permissions and portals (SEC-005).
+4. **The app's files to other programs.** Anything on disk can be read by
+   other programs running as you, so sign-in data is only ever on disk
+   encrypted (SEC-009).
+5. **Source to release.** Code, dependencies, CI and the published build
+   (SEC-001 to SEC-004, SEC-020).
+
+### Assets
+
+| Asset | Why it matters |
+|---|---|
+| Microsoft sign-in (cookies and tokens) | Whoever holds them is signed in as you, to Xbox and possibly more of your Microsoft account |
+| Microphone | Live audio from your room |
+| Keystrokes | Passwords and chat typed while Crossparty or a game has focus |
+| The release download | A swapped build runs on every user's machine |
+| The GitHub account, its keys and tokens | Control of the code, settings and future releases |
+
+### Who might attack
+
+| Attacker | What they can do to start with |
+|---|---|
+| Another player in a party | Send text and links that appear in the page |
+| A malicious website | Run its own code, if a link to it ever loads |
+| Someone on the network | See and change unencrypted traffic |
+| Someone with the device | Use the logged-in desktop, or copy files from a lost or shared device |
+| Other software running as you | Read your files and talk to your session's services |
+| A supply chain attacker | Tamper with a dependency, a CI action or a build tool |
+| Someone after the developer's accounts | Phish or steal a GitHub login, key or token |
+
+Microsoft is not in this list: the page is Microsoft's own, and it already
+sees everything said and done in a party. Crossparty cannot hide anything from
+Microsoft and does not try.
+
+### Threats and controls
+
+| Threat | Controls | Left over |
+|---|---|---|
+| A link in party chat leads to a malicious page next to your session and microphone | Exact host allowlist, https only, every other link to your browser, other schemes blocked, downloads refused (SEC-010) | Frames inside Microsoft's pages may load other hosts, with no permissions (SEC-010) |
+| A page uses the camera, screen, location or other browser powers | Only the microphone and notifications, only for allowed hosts; any new permission type refused (SEC-011) | None beyond what Microsoft's own page does with the microphone |
+| The page breaks out of the browser | Chromium's sandbox inside Flatpak's (SEC-012); no native objects exposed to the page; the invite watcher runs in an isolated world and only reports a number (SEC-017) | A Chromium bug fixed in Chrome but not yet in QtWebEngine (RISK-001) |
+| The sign-in is copied from disk | In-memory web profile; cookies saved only with AES-256-GCM, key from KWallet via the Secret portal; tampered files deleted (SEC-009) | Software running as you while KWallet is unlocked can ask for the key (RISK-002) |
+| A lost or shared device keeps the sign-in | Sign out and wipe erases the saved sign-in, cookies and cache, then quits (SEC-018) | The KWallet secret stays, protecting nothing on its own (SEC-018) |
+| The microphone is live without you knowing | Mute silences Crossparty's own recording stream; the muted badge and top bar always show the state; one copy at a time; the app quits rather than run with no window (SEC-007, SEC-013, SEC-014) | The page decides when it records while unmuted, as in any browser |
+| Keystrokes are read by another app | Wayland only on the desktop; the overlay and notices never take the keyboard (SEC-015, SEC-016) | X11 in Steam's Game Mode, shared with games (RISK-003, SEC-019) |
+| Page text in notices is used to trick you | Shown as plain text only, never links or rich text; invite toasts use fixed text (SEC-016, SEC-017) | None |
+| Traffic is read or changed on the network | Allowed hosts are https only (SEC-010); certificate checks are Chromium's own | None beyond Chromium's |
+| A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
+| A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004); GitHub secret scanning with push protection (SEC-021) | Caught only for formats the scanners know |
+| The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA; rulesets so nothing reaches main or staging without passing checks, and release tags cannot move; admin token made only for each apply (SEC-021) | Hardware-key 2FA still to do (stage 0's open item) |
+| A tampered release reaches users | Planned for stage 6: builds only in CI, Flathub's signed repository | Not yet in place: there is no release |
+
+### Out of scope
+
+- Anything Microsoft does with what you say, play or type on its service.
+- A device already fully compromised (root access, or a keylogger in the
+  desktop session).
+- Cheating or anti-cheat systems: Crossparty never reads or changes games.
+- Other Microsoft services reached by your browser through links Crossparty
+  hands to it.
 
 ## Decision log
 
@@ -64,9 +150,10 @@ push protection is added in stage 5 as a second layer.
 is added in the stage that needs it, with a comment giving the reason.
 
 **Why:** Deny by default. A permission that is not granted cannot be abused,
-and a short list is easy to review. There is deliberately no X11 socket: X11
-lets any client read other clients' keystrokes, including games running on
-XWayland.
+and a short list is easy to review. There is deliberately no X11 socket on
+the desktop: X11 lets any client read other clients' keystrokes, including
+games running on XWayland. Steam's Game Mode, which offers nothing but X11, is
+the one exception (SEC-019) _(amended 2026-11-06)_.
 
 **Testing:** The unit tests run headless (`QT_QPA_PLATFORM=offscreen`), so
 even the test sandbox needs no display socket. The CI Flatpak action's
@@ -127,10 +214,352 @@ and pick their account. Stage 2 will try to remove that click by opening
 xbox.com's sign-in address at start. That is navigation only; it does not
 script Microsoft's page.
 
+**How it works:**
+
+- The key comes from the XDG Secret portal, which KDE backs with KWallet. The
+  portal gives each Flatpak app its own secret, tied to the app ID, and needs
+  no Flatpak permission. It writes the secret into a pipe the app hands it,
+  so the secret never travels over D-Bus. The app turns it into a 32-byte key
+  for this one purpose with HKDF-SHA256.
+- Cookies are encrypted with AES-256-GCM (OpenSSL), with a new random nonce on
+  every save. GCM also detects any change to the file: a changed, cut-short or
+  foreign file fails to decrypt, and is then deleted, so the user starts
+  signed out.
+- The file is `cookies.vault` in the app's own data folder, owner-only (600),
+  written atomically so a crash never leaves half a file. Expired cookies are
+  left out. Session cookies are kept, because the spike showed sign-in needs
+  them.
+- Fail safe: if the portal refuses, KWallet stays locked for 60 seconds, or
+  the key cannot be made, nothing is saved. The app still works; the user
+  signs in again next time.
+- Host-only cookies are restored without a domain. With one, Chromium refuses
+  Microsoft's `__Host-` sign-in cookie (found in the spike).
+- Tests: `tests/CookieCipherTest.cpp` (round trips, fresh nonces, wrong key,
+  every changed byte) and `tests/CookieFormatTest.cpp`.
+
+**Limit:** anything that can run code as the user and reach KWallet while it
+is unlocked can still ask for the secret, the same as for any keyring. This
+protects against the cookie file being copied or read on its own, which is
+what the plain-text database allowed.
+
 **Rejected:** keeping the normal on-disk profile (plain-text tokens readable by
 any unsandboxed program running as the user), and switching to Electron (it
 encrypts cookies but still keeps Local Storage in plain text, and it cannot
 draw the overlay as a layer surface).
+
+### SEC-010: Only Microsoft's sites load inside the app
+
+**Decision:** The page may only show addresses on an exact list of hosts:
+`www.xbox.com`, `play.xbox.com`, `login.live.com`,
+`login.microsoftonline.com` and `account.live.com`, over https on the standard port, with no user name in the
+address. Any other https link opens in the user's default browser, through the
+OpenURI portal. Everything else (plain http, `file:`, `data:`, `javascript:`,
+other apps' link schemes) is blocked. Requests to open a new window follow the
+same rules, and downloads are refused.
+
+**Why:** The main attack path is a link in party text chat. Inside the app, a
+malicious page would sit next to the Microsoft session and the microphone
+permission. In the user's own browser, it is just another web page. Exact
+host names, not patterns, mean a look-alike such as
+`www.xbox.com.attacker.example` can never match. A user name in an address
+(`https://www.xbox.com@attacker.example`) is refused because it hides the real
+host from anyone reading the link. Unknown link schemes are blocked rather
+than handed to the desktop, because they could open local files or start
+other programs.
+
+**Frames:** Frames embedded in an allowed page may load from other hosts,
+because Microsoft's pages use them (for example for sign-in checks) and a
+frame cannot be moved to the browser on its own. A frame can never replace the
+main page, and it gets no permissions unless its own origin is allowed
+(SEC-011).
+
+**Logs:** Decisions are logged with the scheme and host only, never the full
+address, which can carry personal details or sign-in tokens.
+
+**Tests:** `tests/SiteAllowlistTest.cpp` and `tests/NavigationPolicyTest.cpp`
+cover the tricks above. The host list came from where the stage 1 spike went
+while signing in and joining a party (`docs/spike.md`). A host is added only
+after seeing the page need it. `play.xbox.com` was added in stage 3: after
+picking an account, sign-in returned there rather than to `www.xbox.com/play`,
+so the app sent the user out to their browser and the sign-in was lost. It
+serves the same Xbox app, run by Microsoft.
+
+### SEC-011: Browser permissions are denied by default
+
+**Decision:** Only two permissions are ever granted: the microphone and
+notifications, and only to pages on the allowlist (SEC-010). Every other
+request (camera, screen sharing, location, clipboard, mouse lock, local fonts,
+and any type added in a future QtWebEngine) is denied. The web profile is
+in-memory, so no decision is remembered across restarts.
+
+**Why:** Party chat needs the microphone, and invite alerts arrive as browser
+notifications. Playing sound needs no permission. Anything more would widen
+what a compromised or malicious page could do with no benefit to the user.
+Listing what is allowed, rather than what is refused, means a new kind of
+permission is refused automatically.
+
+**Tests:** `tests/PermissionPolicyTest.cpp`.
+
+### SEC-012: Network and audio access for the Flatpak
+
+**Decision:** The manifest adds `--share=network` and `--socket=pulseaudio`,
+and builds on Flathub's QtWebEngine base app.
+
+**Why:** The app cannot reach Microsoft's servers without the network, and
+party chat needs the microphone and speakers. Flatpak has no narrower option:
+network access is all or nothing, and the PulseAudio socket covers both
+playback and recording. The narrowing happens inside the app instead: the
+allowlist (SEC-010) decides which sites load, and the permission policy
+(SEC-011) decides which of them may use the microphone. The QtWebEngine base
+app is Flathub's own build of QtWebEngine, with Chromium patched so its
+sandbox runs inside Flatpak (spike test 7).
+
+### SEC-013: Tray icon over D-Bus, and one copy at a time
+
+**Decision:** The manifest adds `--talk-name=org.kde.StatusNotifierWatcher`,
+so the app can show its icon in KDE's system tray. The app also claims its own
+app ID on the session bus and answers `org.freedesktop.Application.Activate`;
+a second copy finds the name taken, asks the first to show its window, and
+exits.
+
+**Why:** Closing the window keeps the party running in the tray, so the tray
+icon is the way back to it. The permission lets the app talk to the tray's
+watcher only, not to any other program on the bus. Owning its own app ID
+needs no permission in Flatpak. One copy at a time means there is never a
+second party connection, and never a second process holding the same
+microphone and session.
+
+**Fail safe:** with no tray, closing the window quits the app, so it is never
+left running with no way to reach it. Only the first copy loads Microsoft's
+page; a second copy exits before creating any web content.
+
+### SEC-014: The mute silences only the app's own microphone stream
+
+**Decision:** The mute works on the recording stream itself, through the
+PulseAudio API that PipeWire provides. The app picks out streams whose
+`pipewire.access.portal.app_id` is its own app ID, and mutes or unmutes only
+those. A new stream (the page reopening the microphone) gets the user's
+choice; a change made elsewhere, such as in Plasma's volume applet, is
+followed.
+
+**Why:** QtWebEngine can only mute what a page plays, and the plan rules out
+scripting Microsoft's page to press its own mute button. Muting the stream
+means Microsoft's page receives silence; nothing about the page changes.
+PipeWire sets the app ID property itself, from the Flatpak sandbox's records,
+so an app cannot claim another app's stream. Inside the sandbox, the app can
+only see its own audio streams anyway (checked on 2026-11-05: other apps'
+streams were not listed).
+
+**Permissions:** none new. The PulseAudio socket is already granted for party
+chat (SEC-012).
+
+**Fail safe:** outside Flatpak there is no trustworthy app ID, so the mute
+button is disabled rather than guessing. If the sound server cannot be
+reached, the button is disabled too.
+
+**Tests:** `tests/MicrophoneStreamsTest.cpp` (which streams count as ours,
+and what happens to new and changed streams).
+
+### SEC-015: The overlay is a layer surface that never takes the keyboard
+
+**Decision:** The overlay is a Wayland layer-shell surface on the overlay
+layer, built with LayerShellQt (pinned to v6.8.2 by tag and commit, built
+from source in the manifest). It never takes keyboard focus: it is used with
+the mouse, and opened and closed with the global hotkey. The one live party
+page moves into it while it is open.
+
+**Why:** Layer shell is how Wayland lets panels sit above other windows,
+including full-screen games, without the X11 tricks that would let apps read
+each other's keystrokes. A first version took the keyboard when opened; both
+games tried (Baldur's Gate 3, Dragon's Dogma 2) minimised or left full screen
+as soon as they lost it. With no keyboard, the game keeps focus and the
+overlay can never trap the keyboard. Moving the same page, rather than
+opening a second one, keeps one party connection and one microphone stream.
+
+**Cost:** no typing in the overlay (party text chat stays in window mode),
+and no Esc or click-outside to close it.
+
+**Supply chain:** LayerShellQt is KDE's own library. The manifest pins the
+exact commit, so a moved tag cannot change what is built.
+
+### SEC-016: Notices above games show the page's text as plain text, and let clicks through
+
+**Decision:** The muted badge and the invite and message toasts live in one
+small layer surface in the top-right corner. It never takes the keyboard and
+is transparent to input, so clicks go to the game underneath. Toast text comes
+from the page's own browser notifications, only from allowlisted origins, and
+is always shown as plain text. The text is never logged.
+
+_(Amended 2026-11-06.)_ xbox.com turned out to send no browser notifications,
+so today the only toast is the invite toast from SEC-017, whose text is fixed
+by the app. The plain-text rule stays, for any notification Microsoft adds
+later.
+
+**Why:** A notification's title and message are written by whoever sent the
+invite or message, through Microsoft's page. Qt's text items guess whether
+text is rich text (HTML) unless told otherwise, so a crafted message could
+otherwise show images, styling or links that look like part of the app.
+Plain text removes that, and links can never be followed from a toast. An
+input-transparent surface can never catch a click meant for the game.
+
+### SEC-017: A read-only script watches the invite count
+
+**Decision:** One small script runs in the page to notice party invites. It
+runs in Chromium's isolated world (`ApplicationWorld`), on the main page only,
+never in frames. It reads the text of one button (`nav-guide`, which shows "1
+invite" in the page's narrow layout) and reports only a number, as a console
+message, and only once the count has held steady for 5 seconds, so the
+label appearing late or flickering never looks like a new invite. It never
+changes the page, clicks anything, or reads names or
+messages. The app acts on a report only when the page is on the allowlist
+(SEC-010), and a report can do one thing: show a toast with fixed text, "Party
+invite". To make the count visible while the user is in a game, the page is
+laid out at the overlay's narrow width whenever the window is not on screen.
+Chromium only lays out a page in a window that is being drawn, and KDE stops
+drawing minimised windows, so the page then moves to a one-pixel, transparent,
+click-through layer surface on the desktop's background layer, under every
+other window. Nothing of the page can be seen there, and it takes no input. The page's other console messages are no longer printed by
+default; they are logged under `crossparty.page` at debug level.
+
+**Why:** xbox.com has no browser notifications and no pop-ups of its own in a
+browser, so there was no other way to tell the user about an invite while
+they play (checked in the page's code and in the running app). "No
+scripting" was the rule because scripts that change Microsoft's page break
+whenever Microsoft updates it, and a script in the page's own world could be
+tampered with by, or tamper with, the page. Isolation means the page's code
+cannot see or change the script, and the script cannot reach the page's code
+or the signed-in session's JavaScript objects. Reading one label and sending
+one number is the smallest thing that works. Because the toast text is fixed,
+nothing a stranger writes can appear above a game.
+
+**Limits, accepted:**
+- The page itself could log a fake report. The worst result is a false
+  "Party invite" toast.
+- If Microsoft renames the button or changes its wording, the reports stop
+  and so do the toasts; nothing else breaks. A weekly check watches for this
+  (`docs/plan.md`, Scheduled checks). The wording match is English only.
+- A toast arrives about 5 seconds after the invite.
+
+**Tests:** `tests/InviteWatchTest.cpp` checks that only a rising count raises
+a toast, that a count seen again after the wide layout does not, that every
+other message is ignored, and that the script is isolated and main-page only.
+
+### SEC-018: Sign out and wipe leaves nothing behind
+
+**Decision:** Sign out and wipe, in the top bar's options menu and the tray
+menu, asks once (Cancel is the default button), then:
+
+1. Deletes the encrypted cookie file, forgets its key, and stops saving, so
+   nothing can be written again in this run.
+2. Deletes every cookie in the web profile and the HTTP cache.
+3. Closes the app.
+
+**Why:** On a shared or lost device, one action must remove access to the
+Microsoft account from Crossparty. The web profile is in-memory (SEC-009), so
+local storage, databases, service workers and visited links exist only in the
+running process, but QtWebEngine has no call to clear them; ending the process
+is the one way to be sure they are gone. The vault is wiped first so that the cookie
+deletions in step 2 can never be saved as a new file. The secret stored in
+KWallet through the Secret portal is not removed (the portal has no call for
+it); without the file it protects nothing, and a new file made after the next
+sign-in uses it again. Settings (the window size) are not session data and
+are kept.
+
+**Tests:** manual (docs/plan.md, Manual checklist: "Sign out and wipe leaves
+no session data"). The cookie store cannot run inside the build sandbox, so
+there is no unit test.
+
+### SEC-019: X11 only in Game Mode, where there is no Wayland
+
+**Decision:** The Flatpak asks for `fallback-x11` as well as `wayland`.
+Flatpak then gives X11 access only when no Wayland display is running. On the
+Plasma desktop, Wayland is always running, so Crossparty stays Wayland-only
+there, exactly as before.
+
+**Why:** Gamescope, the compositor behind Steam's Game Mode, offers the apps
+it runs only X11 (its own XWayland), so without X11 handheld mode cannot open
+a window at all. The cost: X11 apps on the same display can read each other's
+keystrokes. In Game Mode, that means Crossparty and the games running beside it
+could see each other's key presses, including anything typed into the
+Microsoft sign-in page on the on-screen keyboard. Sign in on the desktop
+instead: the sign-in is kept (SEC-009), so Game Mode never needs it typed.
+Games under Gamescope already share that one X11 display with each other, so
+this adds Crossparty to an existing shared space rather than opening a new one.
+Handheld mode itself is chosen from environment variables only
+(`XDG_CURRENT_DESKTOP=gamescope` or `GAMESCOPE_WAYLAND_DISPLAY`;
+`CROSSPARTY_HANDHELD=1` or `0` overrides), and it turns off the overlay,
+corner notices and background holder, which need the Wayland layer Gamescope
+does not have.
+
+X11 also needs `--share=ipc`: X11 passes images through shared memory, and
+Flathub rejects X11 without it. This shares the host's System V IPC namespace
+(shared memory and semaphores) with the app, not files or sockets; it is the
+standard pairing on Flathub and adds little beyond X11 itself
+_(amended 2026-11-06)_.
+
+**Tests:** `tests/GameModeDetectionTest.cpp` checks the detection and the
+override. The X11 fallback is manual: nested Gamescope on the desktop (see
+docs/plan.md, Handheld testing without a handheld).
+
+### SEC-020: CodeQL scans the code and workflows
+
+**Decision:** A CodeQL workflow analyses the C++ code and the GitHub Actions
+workflows on every push and pull request, and once a week, with the
+`security-extended` rule set. It reads the source without building it.
+
+**Why:** CodeQL finds whole kinds of security bugs that compiler warnings,
+clang-tidy and clazy do not, such as untrusted data reaching a file path or a
+command, and unsafe patterns in workflows such as untrusted pull request text
+used in a shell step. The weekly run applies new rules to code that has not
+changed. Building is skipped because Qt 6.11 and QtWebEngine exist only in the
+Flatpak SDK, not on GitHub's runners; CodeQL then works from the source alone,
+which can miss a little that a full build would show.
+
+**Permissions:** this job is the one exception to SEC-003's read-only token:
+it gets `security-events: write`, which can only upload scan results to the
+repo's Security tab. It still cannot push code or change releases. The actions
+are pinned by commit hash (SEC-002).
+
+**Tests:** the workflow itself, on every push. Results are reviewed in the
+Security tab, and any real finding is fixed before a release.
+
+### SEC-021: GitHub settings are code, applied by hand with a short-lived token
+
+**Decision:** The repository's GitHub settings live in `infra/github` as
+OpenTofu code:
+
+- `main` and `staging` change only through pull requests whose CI and CodeQL
+  checks passed, with no force pushes or deletion and no bypass, the owner
+  included. The checks must come from the GitHub Actions app.
+- `v*` release tags cannot be moved or deleted.
+- Secret scanning with push protection, Dependabot alerts and Dependabot
+  security fixes are on.
+- Merged branches are deleted.
+
+The state file is encrypted with OpenTofu's client-side encryption (PBKDF2
+from a passphrase, then AES-GCM) and kept out of the repo. Applies use a
+fine-grained token limited to this repository and to Administration, made
+for one day and deleted afterwards. The token and passphrase are read from
+the terminal without echo, never stored in files or shell history, and never
+given to CI.
+
+**Why:** Settings changed by clicking leave no record and can drift without
+anyone noticing; as code, every change is reviewed in a pull request and
+`tofu plan` shows any drift. The rulesets make a stolen session or a bad
+push much less damaging: nothing reaches `main` or `staging` without passing
+the checks, and a released tag can never be pointed at different code. The
+admin token is the most powerful secret in the project, so it is made only
+when needed, limited to one repository, and short-lived. The state file
+records settings and IDs, not secrets, but it is encrypted anyway, so a copy
+of it shows nothing. The provider is pinned to one version, with its
+checksums in `.terraform.lock.hcl`; the repository has `prevent_destroy` and
+`archive_on_destroy`, so no mistaken command can delete it.
+
+**Not covered:** private vulnerability reporting, which the provider cannot
+manage, is turned on by hand once (infra/github/README.md).
+
+**Tests:** `tofu fmt` runs in dev/lint.sh; `tofu validate` was run when the
+config was written. Each apply is checked by reading its plan first.
 
 ## Accepted risks
 
@@ -140,3 +569,20 @@ QtWebEngine is patched through the KDE runtime, which lags Chrome's releases.
 Exposure is limited because only Microsoft's own origins ever load in the app,
 and every other link opens in your default browser. This risk is reviewed at
 each release.
+
+### RISK-002: Software running as you can reach the saved sign-in
+
+The cookie file is encrypted (SEC-009), but its key is in KWallet. Any
+program running as you while KWallet is unlocked could ask the Secret portal
+or KWallet for secrets, as it could for every other keyring entry. Flatpak
+gives each app its own secret, so another Flatpak app cannot ask for
+Crossparty's; an unsandboxed program can. Protecting against software already
+running as you is outside what an app can do, so this is accepted.
+
+### RISK-003: X11 keystrokes are shared in Steam's Game Mode
+
+In Game Mode, Crossparty and the games beside it share Gamescope's X11
+display, so each could read the other's key presses (SEC-019). Signing in on
+the desktop, where Crossparty uses Wayland only, avoids typing the password in
+Game Mode at all. Accepted because handheld mode cannot work without it, and
+the games already share that display with each other.

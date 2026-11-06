@@ -17,6 +17,9 @@ cd "$repository_root"
 echo "==> Formatting, QML lint and secret scan (pre-commit hooks)"
 pre-commit run --all-files --show-diff-on-failure
 
+echo "==> OpenTofu formatting"
+tofu fmt -check -diff -recursive infra
+
 echo "==> Secret scan of the whole git history"
 gitleaks git --redact --no-banner
 

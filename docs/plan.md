@@ -41,14 +41,22 @@ plan is recorded here before it is built.
 | IaC tool | OpenTofu | Same language as Terraform, open licence, encrypted state built in |
 | Dev environment | Distrobox container defined in the repo | Keeps tools off the immutable host; reproducible |
 | Overlay | Hidden until summoned, top-right, opens with focus | Used for invites, audio, achievements, then dismissed |
-| Overlay dismiss | Hotkey, Esc, or click outside | Matches Steam overlay habits |
+| Overlay dismiss | Hotkey or the top-bar button _(amended 2026-11-05: Esc and click outside dropped, see Overlay keyboard)_ | Matches Steam overlay habits |
 | Hotkeys | Meta+Shift+X overlay, Meta+Shift+M mute | Mute works everywhere; via KDE's shortcut portal |
 | Click-through | Cut | Overlay is summoned with focus, so not needed |
 | Official support | Plasma 6 Wayland + Gamescope | What can actually be tested; others best effort |
 | Learning mode | On | Plain-English comments, explained decisions, security write-up |
 | Cookie storage | In-memory web profile; the app saves only cookies, encrypted _(amended 2026-11-05)_ | QtWebEngine never encrypts its cookie database (spike test 8). Costs one click on Sign in per launch. See SEC-009 |
 | Cookie key | From the XDG Secret portal (KWallet), encrypted by the app with AES-256-GCM _(amended 2026-11-05)_ | Needs no Flatpak permission. Talking to Secret Service directly would open far more of the keyring than the app needs |
+| Translation | Qt's own system (`qsTr`, Qt Linguist), not KDE's KI18n _(added 2026-11-05)_ | No extra library, and the app is not part of KDE's translation infrastructure |
+| Microphone mute | Mute the app's own recording stream in PipeWire, found by the app ID PipeWire tags it with _(added 2026-11-05)_ | QtWebEngine only mutes page output, and scripting the page is ruled out. Tested: the page hears silence. See SEC-014 |
+| Overlay keyboard | Mouse-only: the overlay never takes the keyboard, and opens and closes by hotkey or the top-bar button _(added 2026-11-05)_ | Games minimise or leave full screen when they lose the keyboard (tested). Replaces "opens with focus" and Esc and click-outside dismiss |
+| Overlay fit | Page zoom 90%, page width 440 CSS px, so xbox.com shows its narrow layout with the party panel filling the overlay _(added 2026-11-05)_ | Uses the page's own layout; nothing is cropped or changed. Same fit at any resolution or scaling |
+| Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
+| Invite toasts | A read-only watcher script, in Chromium's isolated world, reads the invite count on the page's Guide button. While the window is hidden or minimised, the page is laid out at the overlay's narrow width so that count is shown _(added 2026-11-06)_ | xbox.com sends no browser notifications and has no pop-ups of its own in a browser; the narrow layout's "1 invite" label is the only signal (tested). The one exception to "no scripting": it reads one label and reports a number. Message alerts are dropped: their only counter is inside the Guide, and opening it clears them. The start page moves to play.xbox.com, Microsoft's newer app, because only it has the invite count. See SEC-017 |
+| Handheld mode | Detected from Gamescope's environment; full screen with a handheld bar (Mute, Sign Out and Wipe); no overlay, corner notices or invite toasts _(added 2026-11-06)_ | Gamescope has no layer above games, and Steam's own menu already switches between apps. Gamescope offers only X11, so X11 is allowed as a fallback when no Wayland is running. See SEC-019 |
+| Sign out and wipe | Erases the saved sign-in file, cookies and cache, then closes the app _(added 2026-11-06)_ | Page storage (local storage, databases) lives only in the in-memory profile, and QtWebEngine has no call to clear it, so closing is the only complete wipe. One confirmation, Cancel by default. See SEC-018 |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
 bonus. Security, sandboxing, clean code and the Flatpak build stay in scope
@@ -75,7 +83,9 @@ until it is solid.
 - Overlay zoom so Microsoft's page fits the compact panel
 - Mute hotkey that works everywhere
 - Muted badge: a small corner icon shown only while muted
-- Invite and message alerts, caught from the page's own browser notifications
+- Invite alerts, read from the page's own invite count _(amended 2026-11-06:
+  the page sends no browser notifications, and message alerts are not
+  possible, see Invite toasts)_
 - Handheld mode: full screen and controller-friendly when Game Mode is detected
 - Remembers each mode's size _(amended 2026-11-05: size only, see Window
   position)_
@@ -89,6 +99,8 @@ until it is solid.
 - Push-to-talk. The spike showed the portal does report key release, so this
   is possible; it stays here until v0.1.0 _(amended 2026-11-05)_
 - "You're talking while muted" warning
+- A "Type a message" button in the overlay that hands it the keyboard on
+  request, accepting that some games minimise then _(added 2026-11-05)_
 - Hotkey feedback: a short notification ("Microphone muted" / "Microphone
   on") when a hotkey changes something, through the notification portal, shown
   in the overlay over full-screen games. Raised during the spike; the muted
@@ -118,9 +130,12 @@ chrome, and Microsoft's page as the content.
 
 ### Overlay
 
-- Summoned with Meta+Shift+X, top-right, takes focus on open.
-- Dismissed with the same hotkey, Esc, or a click outside.
-- Page zoomed (about 70%, tuned in testing) to fit the compact panel.
+- Summoned with Meta+Shift+X, top-right. Mouse-only: it never takes the
+  keyboard, so games keep focus _(amended 2026-11-05)_.
+- Dismissed with the same hotkey or the top-bar button _(amended
+  2026-11-05)_.
+- Page zoomed to 90% and 440 CSS px wide, so xbox.com's own narrow layout
+  fills the panel with the party view _(amended 2026-11-05)_.
 - Controller input still reaches the game while the overlay is open, so use
   mouse and keyboard in it on desktop.
 - Works over borderless games. Over exclusive full-screen games, taking the
@@ -129,13 +144,26 @@ chrome, and Microsoft's page as the content.
 
 ### Always visible
 
-- Muted badge in the top-right corner, shown only while muted.
-- Invite alerts as small corner toasts naming the hotkey.
+- Muted badge in the top-right corner, shown only while muted. While the
+  overlay is open, its own status bar shows the microphone state instead
+  _(amended 2026-11-05)_.
+- Badge and toasts never take the keyboard and let clicks through to the game
+  _(added 2026-11-05)_.
+- Invite alerts as small corner toasts naming the hotkey. They say only that
+  an invite is waiting, never who sent it _(amended 2026-11-06)_.
 
 ### Handheld mode
 
 - Full screen, larger touch and controller targets, thick focus outlines.
 - Switched to with the Steam button; voice keeps running in the background.
+- Controller through Steam Input: the D-pad as arrow keys and A as Enter on
+  the handheld bar, and Down from the bar goes to the page. A template that
+  also gives a mouse (trackpad or stick) works best for the page itself
+  _(added 2026-11-06)_.
+- No overlay, muted badge or invite toasts: Gamescope has no layer above
+  games for them _(added 2026-11-06)_.
+- Detected from Gamescope's environment; `CROSSPARTY_HANDHELD=1` forces it on
+  and `=0` off _(added 2026-11-06)_.
 
 ### Rules that keep it from looking AI-made
 
@@ -181,6 +209,9 @@ other link to your default browser.
 The biggest risks are a stolen Microsoft session, a hijacked mic, and a
 tampered download; the main attack path is a link in party text chat.
 
+The full threat model is in [security.md](security.md#threat-model); this
+section is the summary _(amended 2026-11-06)_.
+
 ### Assets
 
 | Asset | Why it matters |
@@ -198,7 +229,7 @@ tampered download; the main attack path is a link in party text chat.
 | Page escapes into the system | Flatpak sandbox around the whole app, plus Chromium's own sandbox, confirmed running inside Flatpak _(amended 2026-11-05)_; no native bridges exposed to the page |
 | Over-granted permissions | Deny by default; mic, speakers and notifications for allowlisted origins only |
 | Cookie theft from disk | Web data kept in memory; cookies saved encrypted with a key from the Secret portal (KWallet) _(amended 2026-11-05)_ |
-| Keystroke snooping | Native Wayland only; no X11 socket |
+| Keystroke snooping | Native Wayland only on the desktop; X11 only in Steam's Game Mode, which offers nothing else _(amended 2026-11-06)_ |
 | Stale browser engine | QtWebEngine patched through the KDE runtime; risk accepted because only Microsoft origins load |
 | Compromised dependency | Minimal dependencies, pinned versions, offline builds, Dependabot |
 | Tampered release | Builds only in CI, build attestation, Flathub or GPG-signed repo |
@@ -357,6 +388,9 @@ and scheduled checks catch breakage before users report it.
 
 ### Scheduled checks (weekly, in CI)
 
+- Does the narrow layout still have the `nav-guide` button the invite watcher
+  reads (SEC-017)? _(added 2026-11-06)_
+
 - Does xbox.com/play still load in the current QtWebEngine with our user
   agent, and do the allowlisted origins still match where it redirects?
 - Is there a newer KDE runtime or dependency release waiting?
@@ -405,8 +439,12 @@ Results are in [spike.md](spike.md). _(amended 2026-11-05)_
 
 ### Handheld testing without a handheld
 
-- Run `gamescope -- flatpak run io.github.KreatureofKreation.Crossparty` inside
-  the desktop to mimic Game Mode.
+- Close Crossparty on the desktop first (a second copy only brings the first
+  to the front), then run
+  `gamescope -W 1280 -H 800 -- flatpak run --nosocket=wayland --socket=x11 io.github.KreatureofKreation.Crossparty`
+  to mimic Game Mode. The two overrides are needed only when nested: the
+  desktop's own Wayland display stops Flatpak's X11 fallback, which real
+  Game Mode does not have _(amended 2026-11-06)_.
 - One real-device check on a Deck or Ally before the first public release, if
   one can be borrowed.
 
@@ -415,7 +453,8 @@ Results are in [spike.md](spike.md). _(amended 2026-11-05)_
 - Fresh install, sign in, restart: still signed in
 - Join a party, talk both ways, mute and unmute by hotkey
 - Muted badge appears and disappears correctly
-- Overlay opens over a borderless game, closes by hotkey, Esc and click outside
+- Overlay opens over a borderless and a full-screen game, the game keeps
+  focus, and it closes by hotkey _(amended 2026-11-05)_
 - Invite toast appears while the overlay is hidden
 - A link in party chat opens in the default browser, not in the app
 - Sign out and wipe leaves no session data
@@ -455,11 +494,48 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 |---|---|---|
 | 0. Setup | Trademark check; second Microsoft account and a test partner; GitHub 2FA with a hardware key; GitHub username and app ID chosen (permanent); repo, Distrobox dev container, formatters, linters and pre-commit hooks from the first commit; minimal CI (build, lint, unit tests on every push) | Done, except hardware-key 2FA _(amended 2026-11-05)_ |
 | 1. Spike (throwaway) | Every test in the spike table run inside a Flatpak build; results in docs/spike.md; confirm Qt or switch to Electron | Done: Qt _(amended 2026-11-05)_ |
-| 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Next |
-| 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | |
-| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | |
-| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | |
+| 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Done _(amended 2026-11-06)_ |
+| 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | Done _(amended 2026-11-06)_ |
+| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Done _(amended 2026-11-06)_ |
+| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | Next |
 | 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | |
+
+### Stage 5 pull requests _(added 2026-11-06)_
+
+1. Flatpak manifest finalised: AppStream metainfo and an app icon,
+   flatpak-builder-lint clean on the manifest and the build, run by
+   dev/flatpak-build.sh and CI. The build is offline (every source pinned, no
+   network while building). Screenshots are left to stage 6, as a recorded
+   lint exception, because they need a public URL and a picture with no
+   account details in it.
+2. CodeQL security scanning in CI: C++ and the workflows, without a build, on
+   every push and weekly (SEC-020).
+3. The threat model written up in docs/security.md: trust boundaries, assets,
+   attackers, threats with their controls and what is left over, and two new
+   accepted risks (keyring access by software running as you; X11 in Game
+   Mode).
+4. OpenTofu config for the repo settings, with encrypted state: rulesets for
+   main, staging and release tags, required checks, secret scanning with push
+   protection, Dependabot alerts and fixes (SEC-021). Applied by hand with a
+   one-day token; private vulnerability reporting is a one-time manual
+   setting the provider cannot manage.
+
+### Stage 4 pull requests _(added 2026-11-06)_
+
+1. Sign out and wipe: an options menu in the top bar and a tray menu entry,
+   one confirmation, then the saved sign-in, cookies and cache are erased and
+   the app closes (SEC-018).
+2. Handheld mode: Game Mode detection, full-screen controller layout, tested
+   in nested Gamescope; X11 only as a fallback where there is no Wayland
+   (SEC-019).
+
+### Stage 3 pull requests _(added 2026-11-05)_
+
+1. Microphone mute: mute our own recording stream, top-bar mute button.
+2. Global hotkeys: shortcuts portal, Meta+Shift+M for mute.
+3. Overlay: layer surface hosting the live page, zoom, focus, Esc and
+   click-outside dismiss, Meta+Shift+X, top-bar overlay button.
+4. Muted badge and invite toasts.
 
 ### Stage 2 pull requests _(added 2026-11-05)_
 
@@ -469,8 +545,9 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    text.
 3. Window and top bar: Kirigami window, system theme, 36 px top bar.
 4. Shared core and settings: views over one core, translatable text,
-   versioned settings file.
-5. Tray and window behaviour: close to tray, single instance, saved size.
+   versioned settings file, saved window size (moved from 5, as the first
+   setting).
+5. Tray and window behaviour: close to tray, single instance.
 
 ## Risks and open questions
 
@@ -490,6 +567,12 @@ answered it before any real build. _(amended 2026-11-05)_
 
 ### Open questions
 
+- ~~After leaving a party, starting a new one sometimes fails with "we can't
+  do this right now".~~ It happens in Firefox too, so it is Microsoft's party
+  service keeping the old party open, and out of the app's reach. Workaround:
+  start and leave a party on the phone (or another device), which clears it.
+  To go in the README's known issues. _(answered 2026-11-05)_
+
 - ~~Does the shortcuts portal report key release (push-to-talk)?~~ Yes (spike
   test 6). KDE sends 0 for every timestamp, so the app times presses itself.
   _(amended 2026-11-05)_
@@ -498,10 +581,9 @@ answered it before any real build. _(amended 2026-11-05)_
   HUDs?
 - ~~Does QtWebEngine's own Chromium sandbox run inside Flatpak?~~ Yes (spike
   test 7). _(amended 2026-11-05)_
-- How does the mute hotkey mute the microphone itself? QtWebEngine can only
-  mute a page's output; muting our own capture stream through
-  PulseAudio/PipeWire is the likely route. Answer before stage 3. _(added
-  2026-11-05)_
+- ~~How does the mute hotkey mute the microphone itself?~~ By muting the
+  app's own recording stream in PipeWire (see the decisions log and SEC-014).
+  _(answered 2026-11-05)_
 
 ## Working agreements
 

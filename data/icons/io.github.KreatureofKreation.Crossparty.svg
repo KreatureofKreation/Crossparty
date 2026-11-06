@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 KreatureofKreation
+SPDX-License-Identifier: MIT
+-->
+<!-- Two speech bubbles crossing over each other: talking across devices. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#2f5a4c"/>
+  <path d="M28 34h48a8 8 0 0 1 8 8v26a8 8 0 0 1-8 8H48l-14 12v-12h-6a8 8 0 0 1-8-8V42a8 8 0 0 1 8-8z" fill="#a7d1c2"/>
+  <path d="M52 54h48a8 8 0 0 1 8 8v26a8 8 0 0 1-8 8h-6v12l-14-12H52a8 8 0 0 1-8-8V62a8 8 0 0 1 8-8z" fill="#e8f3ef" stroke="#2f5a4c" stroke-width="4"/>
+  <circle cx="64" cy="75" r="4" fill="#2f5a4c"/>
+  <circle cx="76" cy="75" r="4" fill="#2f5a4c"/>
+  <circle cx="88" cy="75" r="4" fill="#2f5a4c"/>
+</svg>
