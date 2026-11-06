@@ -382,6 +382,32 @@ are kept.
 no session data"). The cookie store cannot run inside the build sandbox, so
 there is no unit test.
 
+### SEC-019: X11 only in Game Mode, where there is no Wayland
+
+**Decision:** The Flatpak asks for `fallback-x11` as well as `wayland`.
+Flatpak then gives X11 access only when no Wayland display is running. On the
+Plasma desktop, Wayland is always running, so Crossparty stays Wayland-only
+there, exactly as before.
+
+**Why:** Gamescope, the compositor behind Steam's Game Mode, offers the apps
+it runs only X11 (its own XWayland), so without X11 handheld mode cannot open
+a window at all. The cost: X11 apps on the same display can read each other's
+keystrokes. In Game Mode, that means Crossparty and the games running beside it
+could see each other's key presses, including anything typed into the
+Microsoft sign-in page on the on-screen keyboard. Sign in on the desktop
+instead: the sign-in is kept (SEC-009), so Game Mode never needs it typed.
+Games under Gamescope already share that one X11 display with each other, so
+this adds Crossparty to an existing shared space rather than opening a new one.
+Handheld mode itself is chosen from environment variables only
+(`XDG_CURRENT_DESKTOP=gamescope` or `GAMESCOPE_WAYLAND_DISPLAY`;
+`CROSSPARTY_HANDHELD=1` or `0` overrides), and it turns off the overlay,
+corner notices and background holder, which need the Wayland layer Gamescope
+does not have.
+
+**Tests:** `tests/GameModeDetectionTest.cpp` checks the detection and the
+override. The X11 fallback is manual: nested Gamescope on the desktop (see
+docs/plan.md, Handheld testing without a handheld).
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

@@ -7,8 +7,9 @@ import org.kde.kirigami as Kirigami
 import Crossparty
 
 // Window mode: the app's own top bar, with the party page filling the rest.
-// The overlay borrows the same live page while it is open; handheld mode will
-// do the same.
+// The overlay borrows the same live page while it is open. In Game Mode the
+// same window becomes handheld mode instead: full screen, with the handheld
+// bar in place of the top bar (docs/plan.md, Handheld mode).
 Kirigami.ApplicationWindow {
     id: mainWindow
 
@@ -19,6 +20,10 @@ Kirigami.ApplicationWindow {
     // The top bar replaces KDE's title bar, so KDE draws no frame.
     flags: Qt.Window | Qt.FramelessWindowHint
 
+    // Gamescope has no layer above games, so in handheld mode there is no
+    // overlay, corner notices or background holder; Steam's own menu switches
+    // between Crossparty and the game.
+    readonly property bool handheld: GameMode.active
     property bool overlayOpen: false
     // While nobody can see the page (the window is in the tray, minimised,
     // or otherwise not drawn), it moves to the background holder at the
@@ -26,7 +31,7 @@ Kirigami.ApplicationWindow {
     // invite watcher reads, so this is what lets a toast appear while you are
     // in a game (docs/plan.md, Invite toasts). The page is never reloaded, so
     // the party carries on.
-    readonly property bool pageInBackground: !overlayOpen && (!visible || visibility === Window.Minimized || !exposure.exposed)
+    readonly property bool pageInBackground: !handheld && !overlayOpen && (!visible || visibility === Window.Minimized || !exposure.exposed)
 
     // Wayland never reports "minimised", but KDE stops drawing the window.
     WindowExposure {
@@ -46,6 +51,9 @@ Kirigami.ApplicationWindow {
     // The one live page moves into the overlay and back, so the party never
     // reconnects (docs/plan.md, Overlay content).
     function openOverlay() {
+        if (handheld) {
+            return;
+        }
         overlay.show();
         partyPage.parent = overlay.pageArea;
         partyPage.zoomFactor = overlay.pageZoom;
@@ -71,7 +79,11 @@ Kirigami.ApplicationWindow {
     // Called from C++ when Crossparty is opened again (main.cpp), and from the
     // tray.
     function bringToFront() {
-        show();
+        if (handheld) {
+            showFullScreen();
+        } else {
+            show();
+        }
         raise();
         requestActivate();
     }
@@ -79,19 +91,26 @@ Kirigami.ApplicationWindow {
     // Only for a normal window: a maximised window's size is the screen's,
     // not one the user chose.
     function saveWindowSize() {
-        if (visibility === Window.Windowed) {
+        if (!handheld && visibility === Window.Windowed) {
             AppSettings.windowSize = Qt.size(width, height);
         }
     }
 
     // Closing sends the app to the tray, so the party keeps going. Quit is in
     // the tray menu. With no tray, closing quits, so the app is never left
-    // running out of reach.
+    // running out of reach. Handheld mode always quits: Game Mode has no tray.
     onClosing: close => {
         saveWindowSize();
-        if (TrayIcon.available) {
+        if (TrayIcon.available && !handheld) {
             close.accepted = false;
             hide();
+        }
+    }
+
+    Component.onCompleted: {
+        if (handheld) {
+            showFullScreen();
+            partyPage.forceActiveFocus();
         }
     }
 
@@ -134,10 +153,18 @@ Kirigami.ApplicationWindow {
 
         TopBar {
             Layout.fillWidth: true
+            visible: !mainWindow.handheld
             window: mainWindow
             overlayOpen: mainWindow.overlayOpen
             onOverlayToggleRequested: mainWindow.toggleOverlay()
             onSignOutRequested: signOutDialog.open()
+        }
+
+        HandheldBar {
+            Layout.fillWidth: true
+            visible: mainWindow.handheld
+            onSignOutRequested: signOutDialog.open()
+            onPageFocusRequested: partyPage.forceActiveFocus()
         }
 
         Item {
@@ -186,14 +213,14 @@ Kirigami.ApplicationWindow {
     CornerNotices {
         id: cornerNotices
 
-        showMutedBadge: MicrophoneMute.muted && !mainWindow.overlayOpen
+        showMutedBadge: MicrophoneMute.muted && !mainWindow.overlayOpen && !mainWindow.handheld
     }
 
     Connections {
         target: WebSession
 
         function onNotificationArrived(title, message) {
-            if (!mainWindow.overlayOpen) {
+            if (!mainWindow.overlayOpen && !mainWindow.handheld) {
                 cornerNotices.presentToast(title, message);
             }
         }
@@ -204,7 +231,7 @@ Kirigami.ApplicationWindow {
             // A minimised window can still count as active on Wayland, so
             // "on screen" is checked as well.
             const partyInFront = mainWindow.overlayOpen || (mainWindow.active && !mainWindow.pageInBackground);
-            if (!partyInFront) {
+            if (!partyInFront && !mainWindow.handheld) {
                 cornerNotices.presentToast(qsTr("Party invite"), qsTr("Someone has invited you to a party."));
             }
         }

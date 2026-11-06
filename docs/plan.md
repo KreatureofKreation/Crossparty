@@ -55,6 +55,7 @@ plan is recorded here before it is built.
 | Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
 | Invite toasts | A read-only watcher script, in Chromium's isolated world, reads the invite count on the page's Guide button. While the window is hidden or minimised, the page is laid out at the overlay's narrow width so that count is shown _(added 2026-11-06)_ | xbox.com sends no browser notifications and has no pop-ups of its own in a browser; the narrow layout's "1 invite" label is the only signal (tested). The one exception to "no scripting": it reads one label and reports a number. Message alerts are dropped: their only counter is inside the Guide, and opening it clears them. The start page moves to play.xbox.com, Microsoft's newer app, because only it has the invite count. See SEC-017 |
+| Handheld mode | Detected from Gamescope's environment; full screen with a handheld bar (Mute, Sign Out and Wipe); no overlay, corner notices or invite toasts _(added 2026-11-06)_ | Gamescope has no layer above games, and Steam's own menu already switches between apps. Gamescope offers only X11, so X11 is allowed as a fallback when no Wayland is running. See SEC-019 |
 | Sign out and wipe | Erases the saved sign-in file, cookies and cache, then closes the app _(added 2026-11-06)_ | Page storage (local storage, databases) lives only in the in-memory profile, and QtWebEngine has no call to clear it, so closing is the only complete wipe. One confirmation, Cancel by default. See SEC-018 |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
@@ -155,6 +156,14 @@ chrome, and Microsoft's page as the content.
 
 - Full screen, larger touch and controller targets, thick focus outlines.
 - Switched to with the Steam button; voice keeps running in the background.
+- Controller through Steam Input: the D-pad as arrow keys and A as Enter on
+  the handheld bar, and Down from the bar goes to the page. A template that
+  also gives a mouse (trackpad or stick) works best for the page itself
+  _(added 2026-11-06)_.
+- No overlay, muted badge or invite toasts: Gamescope has no layer above
+  games for them _(added 2026-11-06)_.
+- Detected from Gamescope's environment; `CROSSPARTY_HANDHELD=1` forces it on
+  and `=0` off _(added 2026-11-06)_.
 
 ### Rules that keep it from looking AI-made
 
@@ -427,8 +436,12 @@ Results are in [spike.md](spike.md). _(amended 2026-11-05)_
 
 ### Handheld testing without a handheld
 
-- Run `gamescope -- flatpak run io.github.KreatureofKreation.Crossparty` inside
-  the desktop to mimic Game Mode.
+- Close Crossparty on the desktop first (a second copy only brings the first
+  to the front), then run
+  `gamescope -W 1280 -H 800 -- flatpak run --nosocket=wayland --socket=x11 io.github.KreatureofKreation.Crossparty`
+  to mimic Game Mode. The two overrides are needed only when nested: the
+  desktop's own Wayland display stops Flatpak's X11 fallback, which real
+  Game Mode does not have _(amended 2026-11-06)_.
 - One real-device check on a Deck or Ally before the first public release, if
   one can be borrowed.
 
@@ -490,7 +503,8 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    one confirmation, then the saved sign-in, cookies and cache are erased and
    the app closes (SEC-018).
 2. Handheld mode: Game Mode detection, full-screen controller layout, tested
-   in nested Gamescope.
+   in nested Gamescope; X11 only as a fallback where there is no Wayland
+   (SEC-019).
 
 ### Stage 3 pull requests _(added 2026-11-05)_
 
