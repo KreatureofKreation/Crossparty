@@ -514,7 +514,11 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    attackers, threats with their controls and what is left over, and two new
    accepted risks (keyring access by software running as you; X11 in Game
    Mode).
-4. OpenTofu config for the repo settings, with encrypted state.
+4. OpenTofu config for the repo settings, with encrypted state: rulesets for
+   main, staging and release tags, required checks, secret scanning with push
+   protection, Dependabot alerts and fixes (SEC-021). Applied by hand with a
+   one-day token; private vulnerability reporting is a one-time manual
+   setting the provider cannot manage.
 
 ### Stage 4 pull requests _(added 2026-11-06)_
 

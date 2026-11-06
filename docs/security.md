@@ -81,8 +81,8 @@ Microsoft and does not try.
 | Page text in notices is used to trick you | Shown as plain text only, never links or rich text; invite toasts use fixed text (SEC-016, SEC-017) | None |
 | Traffic is read or changed on the network | Allowed hosts are https only (SEC-010); certificate checks are Chromium's own | None beyond Chromium's |
 | A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
-| A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004) | Caught only for formats the scanners know |
-| The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA | Hardware-key 2FA and secret scanning push protection still to do (stage 5 OpenTofu, and stage 0's open item) |
+| A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004); GitHub secret scanning with push protection (SEC-021) | Caught only for formats the scanners know |
+| The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA; rulesets so nothing reaches main or staging without passing checks, and release tags cannot move; admin token made only for each apply (SEC-021) | Hardware-key 2FA still to do (stage 0's open item) |
 | A tampered release reaches users | Planned for stage 6: builds only in CI, Flathub's signed repository | Not yet in place: there is no release |
 
 ### Out of scope
@@ -522,6 +522,44 @@ are pinned by commit hash (SEC-002).
 
 **Tests:** the workflow itself, on every push. Results are reviewed in the
 Security tab, and any real finding is fixed before a release.
+
+### SEC-021: GitHub settings are code, applied by hand with a short-lived token
+
+**Decision:** The repository's GitHub settings live in `infra/github` as
+OpenTofu code:
+
+- `main` and `staging` change only through pull requests whose CI and CodeQL
+  checks passed, with no force pushes or deletion and no bypass, the owner
+  included. The checks must come from the GitHub Actions app.
+- `v*` release tags cannot be moved or deleted.
+- Secret scanning with push protection, Dependabot alerts and Dependabot
+  security fixes are on.
+- Merged branches are deleted.
+
+The state file is encrypted with OpenTofu's client-side encryption (PBKDF2
+from a passphrase, then AES-GCM) and kept out of the repo. Applies use a
+fine-grained token limited to this repository and to Administration, made
+for one day and deleted afterwards. The token and passphrase are read from
+the terminal without echo, never stored in files or shell history, and never
+given to CI.
+
+**Why:** Settings changed by clicking leave no record and can drift without
+anyone noticing; as code, every change is reviewed in a pull request and
+`tofu plan` shows any drift. The rulesets make a stolen session or a bad
+push much less damaging: nothing reaches `main` or `staging` without passing
+the checks, and a released tag can never be pointed at different code. The
+admin token is the most powerful secret in the project, so it is made only
+when needed, limited to one repository, and short-lived. The state file
+records settings and IDs, not secrets, but it is encrypted anyway, so a copy
+of it shows nothing. The provider is pinned to one version, with its
+checksums in `.terraform.lock.hcl`; the repository has `prevent_destroy` and
+`archive_on_destroy`, so no mistaken command can delete it.
+
+**Not covered:** private vulnerability reporting, which the provider cannot
+manage, is turned on by hand once (infra/github/README.md).
+
+**Tests:** `tofu fmt` runs in dev/lint.sh; `tofu validate` was run when the
+config was written. Each apply is checked by reading its plan first.
 
 ## Accepted risks
 
