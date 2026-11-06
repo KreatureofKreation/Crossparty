@@ -61,9 +61,12 @@ SPDX-License-Identifier: CC0-1.0
   </supports>
 
   <releases>
-    <release version="0.0.1" date="2026-11-06" type="development">
+    <!-- The date is set to the release day when the tag is made. -->
+    <release version="0.1.0" date="2026-11-07" type="stable">
       <description>
-        <p>Development build; not yet released.</p>
+        <p>The first release: party chat in a KDE window, a mute hotkey with a
+        muted badge, an overlay above games, invite alerts, a handheld mode
+        for Steam's Game Mode, and Sign out and wipe.</p>
       </description>
     </release>
   </releases>
