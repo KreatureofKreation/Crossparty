@@ -7,6 +7,7 @@
 #include "NavigationPolicy.h"
 #include "PermissionPolicy.h"
 #include "SecretPortal.h"
+#include "SiteAllowlist.h"
 
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -16,6 +17,9 @@
 #include <QWebEngineCookieStore>
 
 Q_LOGGING_CATEGORY(lcWeb, "crossparty.web", QtInfoMsg)
+// Microsoft's own page logs: mostly telemetry noise, so hidden unless asked
+// for with QT_LOGGING_RULES="crossparty.page.debug=true".
+Q_LOGGING_CATEGORY(lcPage, "crossparty.page", QtInfoMsg)
 
 namespace
 {
@@ -69,12 +73,46 @@ WebSession::WebSession(QObject *parent)
         download->cancel();
     });
 
+    // Invite and message alerts arrive as the page's own browser
+    // notifications (SEC-011 allows them for Microsoft's sites only).
+    connect(m_profile, &QQuickWebEngineProfile::presentNotification, this, &WebSession::onNotification);
+
     // Save any last change before the app exits.
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, m_cookieVault, &CookieVault::saveNow);
 
     connect(m_secretPortal, &SecretPortal::secretReady, this, &WebSession::onSecretReady);
     connect(m_secretPortal, &SecretPortal::secretUnavailable, this, &WebSession::onSecretUnavailable);
     m_secretPortal->requestSecret();
+}
+
+void WebSession::onNotification(QWebEngineNotification *notification)
+{
+    // Defence in depth: the permission policy already refuses notifications
+    // to other sites.
+    if (!SiteAllowlist::isAllowedInApp(notification->origin())) {
+        notification->close();
+        return;
+    }
+    // Tells the page its notification was shown. Its text is never logged.
+    notification->show();
+    Q_EMIT notificationArrived(notification->title(), notification->message());
+}
+
+void WebSession::handleConsoleMessage(const QString &message, const QUrl &pageUrl)
+{
+    // Only Microsoft's own pages can raise a toast (SEC-010). A report can
+    // only ever say "the count went up", never put page text on screen.
+    if (SiteAllowlist::isAllowedInApp(pageUrl) && m_inviteWatch.handleReport(message)) {
+        qCInfo(lcWeb) << "New party invite";
+        Q_EMIT inviteArrived();
+        return;
+    }
+    qCDebug(lcPage) << message;
+}
+
+QWebEngineScript WebSession::inviteWatchScript() const
+{
+    return InviteWatch::script();
 }
 
 void WebSession::onSecretReady(const QByteArray &secret)
@@ -111,7 +149,10 @@ QQuickWebEngineProfile *WebSession::profile() const
 
 QUrl WebSession::startUrl() const
 {
-    return QUrl(QStringLiteral("https://www.xbox.com/play"));
+    // Microsoft's newer Xbox web app. The older www.xbox.com/play page has no
+    // invite count for the invite watcher to read (SEC-017), and sign-in
+    // already sends people here.
+    return QUrl(QStringLiteral("https://play.xbox.com/"));
 }
 
 void WebSession::handleNavigation(QWebEngineNavigationRequest *request) const

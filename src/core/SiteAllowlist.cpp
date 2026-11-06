@@ -26,6 +26,10 @@ QStringList SiteAllowlist::allowedHosts()
         // as verifying a recovery email. Without it, sign-in could not finish
         // inside the app.
         QStringLiteral("account.live.com"),
+        // Microsoft's newer Xbox web app, and the app's start page. Sign-in
+        // can return here; without it, picking an account sent the user out
+        // to their browser, signed out.
+        QStringLiteral("play.xbox.com"),
     };
 }
 

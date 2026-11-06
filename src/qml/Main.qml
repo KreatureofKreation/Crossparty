@@ -20,21 +20,44 @@ Kirigami.ApplicationWindow {
     flags: Qt.Window | Qt.FramelessWindowHint
 
     property bool overlayOpen: false
+    // While nobody can see the page (the window is in the tray, minimised,
+    // or otherwise not drawn), it moves to the background holder at the
+    // overlay's narrow width. Only that layout shows the "1 invite" label the
+    // invite watcher reads, so this is what lets a toast appear while you are
+    // in a game (docs/plan.md, Invite toasts). The page is never reloaded, so
+    // the party carries on.
+    readonly property bool pageInBackground: !overlayOpen && (!visible || visibility === Window.Minimized || !exposure.exposed)
+
+    // Wayland never reports "minimised", but KDE stops drawing the window.
+    WindowExposure {
+        id: exposure
+
+        window: mainWindow
+    }
+
+    onPageInBackgroundChanged: {
+        if (pageInBackground) {
+            partyPage.parent = backgroundHolder.pageArea;
+        } else if (!overlayOpen) {
+            partyPage.parent = pageHolder;
+        }
+    }
 
     // The one live page moves into the overlay and back, so the party never
     // reconnects (docs/plan.md, Overlay content).
     function openOverlay() {
         overlay.show();
-        partyPage.parent = overlay.contentItem;
+        partyPage.parent = overlay.pageArea;
         partyPage.zoomFactor = overlay.pageZoom;
         overlayOpen = true;
     }
 
     function closeOverlay() {
-        partyPage.parent = pageHolder;
         partyPage.zoomFactor = 1;
-        overlay.hide();
         overlayOpen = false;
+        // Straight to the background holder if the window is not on screen.
+        partyPage.parent = pageInBackground ? backgroundHolder.pageArea : pageHolder;
+        overlay.hide();
     }
 
     function toggleOverlay() {
@@ -117,10 +140,13 @@ Kirigami.ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            // Sized by binding rather than anchors, so it follows whichever
+            // window holds it.
             PartyPage {
                 id: partyPage
 
-                anchors.fill: parent
+                width: parent ? parent.width : 0
+                height: parent ? parent.height : 0
             }
 
             Kirigami.PlaceholderMessage {
@@ -136,6 +162,42 @@ Kirigami.ApplicationWindow {
 
     OverlayWindow {
         id: overlay
+    }
+
+    BackgroundHolder {
+        id: backgroundHolder
+
+        pageWidth: overlay.pageWidth
+        visible: mainWindow.pageInBackground
+    }
+
+    // While the overlay is open it shows the microphone state itself, and the
+    // party is in front of the user, so the corner notices stay out of its way.
+    CornerNotices {
+        id: cornerNotices
+
+        showMutedBadge: MicrophoneMute.muted && !mainWindow.overlayOpen
+    }
+
+    Connections {
+        target: WebSession
+
+        function onNotificationArrived(title, message) {
+            if (!mainWindow.overlayOpen) {
+                cornerNotices.presentToast(title, message);
+            }
+        }
+
+        // The page gives no name, and none is shown: the toast only says that
+        // an invite is waiting.
+        function onInviteArrived() {
+            // A minimised window can still count as active on Wayland, so
+            // "on screen" is checked as well.
+            const partyInFront = mainWindow.overlayOpen || (mainWindow.active && !mainWindow.pageInBackground);
+            if (!partyInFront) {
+                cornerNotices.presentToast(qsTr("Party invite"), qsTr("Someone has invited you to a party."));
+            }
+        }
     }
 
     // Above everything else, so the edges can be grabbed over the page too.

@@ -26,6 +26,7 @@ void SiteAllowlistTest::decidesWhatLoadsInTheApp_data()
     // The sites the app needs.
     QTest::newRow("xbox play") << QStringLiteral("https://www.xbox.com/play") << true;
     QTest::newRow("xbox localised") << QStringLiteral("https://www.xbox.com/en-AU/play") << true;
+    QTest::newRow("xbox play host") << QStringLiteral("https://play.xbox.com/") << true;
     QTest::newRow("microsoft sign-in") << QStringLiteral("https://login.live.com/oauth20_authorize.srf?x=1") << true;
     QTest::newRow("work sign-in redirect") << QStringLiteral("https://login.microsoftonline.com/") << true;
     QTest::newRow("account checks") << QStringLiteral("https://account.live.com/proofs") << true;

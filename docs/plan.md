@@ -54,6 +54,7 @@ plan is recorded here before it is built.
 | Overlay fit | Page zoom 90%, page width 440 CSS px, so xbox.com shows its narrow layout with the party panel filling the overlay _(added 2026-11-05)_ | Uses the page's own layout; nothing is cropped or changed. Same fit at any resolution or scaling |
 | Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
+| Invite toasts | A read-only watcher script, in Chromium's isolated world, reads the invite count on the page's Guide button. While the window is hidden or minimised, the page is laid out at the overlay's narrow width so that count is shown _(added 2026-11-06)_ | xbox.com sends no browser notifications and has no pop-ups of its own in a browser; the narrow layout's "1 invite" label is the only signal (tested). The one exception to "no scripting": it reads one label and reports a number. Message alerts are dropped: their only counter is inside the Guide, and opening it clears them. The start page moves to play.xbox.com, Microsoft's newer app, because only it has the invite count. See SEC-017 |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
 bonus. Security, sandboxing, clean code and the Flatpak build stay in scope
@@ -80,7 +81,9 @@ until it is solid.
 - Overlay zoom so Microsoft's page fits the compact panel
 - Mute hotkey that works everywhere
 - Muted badge: a small corner icon shown only while muted
-- Invite and message alerts, caught from the page's own browser notifications
+- Invite alerts, read from the page's own invite count _(amended 2026-11-06:
+  the page sends no browser notifications, and message alerts are not
+  possible, see Invite toasts)_
 - Handheld mode: full screen and controller-friendly when Game Mode is detected
 - Remembers each mode's size _(amended 2026-11-05: size only, see Window
   position)_
@@ -139,8 +142,13 @@ chrome, and Microsoft's page as the content.
 
 ### Always visible
 
-- Muted badge in the top-right corner, shown only while muted.
-- Invite alerts as small corner toasts naming the hotkey.
+- Muted badge in the top-right corner, shown only while muted. While the
+  overlay is open, its own status bar shows the microphone state instead
+  _(amended 2026-11-05)_.
+- Badge and toasts never take the keyboard and let clicks through to the game
+  _(added 2026-11-05)_.
+- Invite alerts as small corner toasts naming the hotkey. They say only that
+  an invite is waiting, never who sent it _(amended 2026-11-06)_.
 
 ### Handheld mode
 
@@ -366,6 +374,9 @@ and scheduled checks catch breakage before users report it.
    never by editing main directly.
 
 ### Scheduled checks (weekly, in CI)
+
+- Does the narrow layout still have the `nav-guide` button the invite watcher
+  reads (SEC-017)? _(added 2026-11-06)_
 
 - Does xbox.com/play still load in the current QtWebEngine with our user
   agent, and do the allowlisted origins still match where it redirects?

@@ -23,4 +23,9 @@ WebEngineView {
         }
     }
     onPermissionRequested: permission => WebSession.handlePermission(permission)
+    onJavaScriptConsoleMessage: (level, message, lineNumber, sourceId) => WebSession.handleConsoleMessage(message, partyPage.url)
+
+    // The read-only invite watcher (docs/security.md#sec-017). Its source is
+    // in the C++ core, not here.
+    Component.onCompleted: userScripts.insert(WebSession.inviteWatchScript)
 }

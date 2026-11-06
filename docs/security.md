@@ -163,8 +163,8 @@ draw the overlay as a layer surface).
 ### SEC-010: Only Microsoft's sites load inside the app
 
 **Decision:** The page may only show addresses on an exact list of hosts:
-`www.xbox.com`, `login.live.com`, `login.microsoftonline.com` and
-`account.live.com`, over https on the standard port, with no user name in the
+`www.xbox.com`, `play.xbox.com`, `login.live.com`,
+`login.microsoftonline.com` and `account.live.com`, over https on the standard port, with no user name in the
 address. Any other https link opens in the user's default browser, through the
 OpenURI portal. Everything else (plain http, `file:`, `data:`, `javascript:`,
 other apps' link schemes) is blocked. Requests to open a new window follow the
@@ -192,7 +192,10 @@ address, which can carry personal details or sign-in tokens.
 **Tests:** `tests/SiteAllowlistTest.cpp` and `tests/NavigationPolicyTest.cpp`
 cover the tricks above. The host list came from where the stage 1 spike went
 while signing in and joining a party (`docs/spike.md`). A host is added only
-after seeing the page need it.
+after seeing the page need it. `play.xbox.com` was added in stage 3: after
+picking an account, sign-in returned there rather than to `www.xbox.com/play`,
+so the app sent the user out to their browser and the sign-in was lost. It
+serves the same Xbox app, run by Microsoft.
 
 ### SEC-011: Browser permissions are denied by default
 
@@ -291,6 +294,68 @@ and no Esc or click-outside to close it.
 
 **Supply chain:** LayerShellQt is KDE's own library. The manifest pins the
 exact commit, so a moved tag cannot change what is built.
+
+### SEC-016: Notices above games show the page's text as plain text, and let clicks through
+
+**Decision:** The muted badge and the invite and message toasts live in one
+small layer surface in the top-right corner. It never takes the keyboard and
+is transparent to input, so clicks go to the game underneath. Toast text comes
+from the page's own browser notifications, only from allowlisted origins, and
+is always shown as plain text. The text is never logged.
+
+_(Amended 2026-11-06.)_ xbox.com turned out to send no browser notifications,
+so today the only toast is the invite toast from SEC-017, whose text is fixed
+by the app. The plain-text rule stays, for any notification Microsoft adds
+later.
+
+**Why:** A notification's title and message are written by whoever sent the
+invite or message, through Microsoft's page. Qt's text items guess whether
+text is rich text (HTML) unless told otherwise, so a crafted message could
+otherwise show images, styling or links that look like part of the app.
+Plain text removes that, and links can never be followed from a toast. An
+input-transparent surface can never catch a click meant for the game.
+
+### SEC-017: A read-only script watches the invite count
+
+**Decision:** One small script runs in the page to notice party invites. It
+runs in Chromium's isolated world (`ApplicationWorld`), on the main page only,
+never in frames. It reads the text of one button (`nav-guide`, which shows "1
+invite" in the page's narrow layout) and reports only a number, as a console
+message, and only once the count has held steady for 5 seconds, so the
+label appearing late or flickering never looks like a new invite. It never
+changes the page, clicks anything, or reads names or
+messages. The app acts on a report only when the page is on the allowlist
+(SEC-010), and a report can do one thing: show a toast with fixed text, "Party
+invite". To make the count visible while the user is in a game, the page is
+laid out at the overlay's narrow width whenever the window is not on screen.
+Chromium only lays out a page in a window that is being drawn, and KDE stops
+drawing minimised windows, so the page then moves to a one-pixel, transparent,
+click-through layer surface on the desktop's background layer, under every
+other window. Nothing of the page can be seen there, and it takes no input. The page's other console messages are no longer printed by
+default; they are logged under `crossparty.page` at debug level.
+
+**Why:** xbox.com has no browser notifications and no pop-ups of its own in a
+browser, so there was no other way to tell the user about an invite while
+they play (checked in the page's code and in the running app). "No
+scripting" was the rule because scripts that change Microsoft's page break
+whenever Microsoft updates it, and a script in the page's own world could be
+tampered with by, or tamper with, the page. Isolation means the page's code
+cannot see or change the script, and the script cannot reach the page's code
+or the signed-in session's JavaScript objects. Reading one label and sending
+one number is the smallest thing that works. Because the toast text is fixed,
+nothing a stranger writes can appear above a game.
+
+**Limits, accepted:**
+- The page itself could log a fake report. The worst result is a false
+  "Party invite" toast.
+- If Microsoft renames the button or changes its wording, the reports stop
+  and so do the toasts; nothing else breaks. A weekly check watches for this
+  (`docs/plan.md`, Scheduled checks). The wording match is English only.
+- A toast arrives about 5 seconds after the invite.
+
+**Tests:** `tests/InviteWatchTest.cpp` checks that only a rising count raises
+a toast, that a count seen again after the wide layout does not, that every
+other message is ignored, and that the script is isolated and main-page only.
 
 ## Accepted risks
 

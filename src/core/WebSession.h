@@ -9,7 +9,11 @@
 #include <QUrl>
 #include <QWebEngineNavigationRequest>
 #include <QWebEngineNewWindowRequest>
+#include <QWebEngineNotification>
 #include <QWebEnginePermission>
+#include <QWebEngineScript>
+
+#include "InviteWatch.h"
 
 class CookieVault;
 class SecretPortal;
@@ -28,6 +32,8 @@ class WebSession : public QObject
     // False until saved cookies have been restored (or there are none to
     // restore), so the page never loads before the user's sign-in is back.
     Q_PROPERTY(bool ready READ isReady NOTIFY readyChanged)
+    // The read-only invite watcher the page view runs (InviteWatch).
+    Q_PROPERTY(QWebEngineScript inviteWatchScript READ inviteWatchScript CONSTANT)
 
 public:
     explicit WebSession(QObject *parent = nullptr);
@@ -35,17 +41,27 @@ public:
     QQuickWebEngineProfile *profile() const;
     QUrl startUrl() const;
     bool isReady() const;
+    QWebEngineScript inviteWatchScript() const;
 
     Q_INVOKABLE void handleNavigation(QWebEngineNavigationRequest *request) const;
     // Returns true if the view should load the address itself. Otherwise the
     // address has been sent to the browser, or blocked.
     Q_INVOKABLE bool handleNewWindow(QWebEngineNewWindowRequest *request) const;
     Q_INVOKABLE void handlePermission(const QWebEnginePermission &permission) const;
+    // Every console message from the page. Invite watcher reports are acted
+    // on; anything else is only logged at debug level.
+    Q_INVOKABLE void handleConsoleMessage(const QString &message, const QUrl &pageUrl);
 
 Q_SIGNALS:
     void readyChanged();
+    // A browser notification from an allowed page, such as a party invite.
+    // The text is Microsoft's and must be shown as plain text only.
+    void notificationArrived(const QString &title, const QString &message);
+    // The page's invite count went up. Carries no names or other page text.
+    void inviteArrived();
 
 private:
+    void onNotification(QWebEngineNotification *notification);
     void onSecretReady(const QByteArray &secret);
     void onSecretUnavailable(const QString &reason);
     void setReady();
@@ -53,5 +69,6 @@ private:
     QQuickWebEngineProfile *m_profile;
     CookieVault *m_cookieVault;
     SecretPortal *m_secretPortal;
+    InviteWatch m_inviteWatch;
     bool m_ready = false;
 };
