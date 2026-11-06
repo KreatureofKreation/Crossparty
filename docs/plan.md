@@ -505,7 +505,8 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    network while building). Screenshots are left to stage 6, as a recorded
    lint exception, because they need a public URL and a picture with no
    account details in it.
-2. CodeQL security scanning in CI.
+2. CodeQL security scanning in CI: C++ and the workflows, without a build, on
+   every push and weekly (SEC-020).
 3. The threat model written up in docs/security.md.
 4. OpenTofu config for the repo settings, with encrypted state.
 

@@ -414,6 +414,28 @@ _(amended 2026-11-06)_.
 override. The X11 fallback is manual: nested Gamescope on the desktop (see
 docs/plan.md, Handheld testing without a handheld).
 
+### SEC-020: CodeQL scans the code and workflows
+
+**Decision:** A CodeQL workflow analyses the C++ code and the GitHub Actions
+workflows on every push and pull request, and once a week, with the
+`security-extended` rule set. It reads the source without building it.
+
+**Why:** CodeQL finds whole kinds of security bugs that compiler warnings,
+clang-tidy and clazy do not, such as untrusted data reaching a file path or a
+command, and unsafe patterns in workflows such as untrusted pull request text
+used in a shell step. The weekly run applies new rules to code that has not
+changed. Building is skipped because Qt 6.11 and QtWebEngine exist only in the
+Flatpak SDK, not on GitHub's runners; CodeQL then works from the source alone,
+which can miss a little that a full build would show.
+
+**Permissions:** this job is the one exception to SEC-003's read-only token:
+it gets `security-events: write`, which can only upload scan results to the
+repo's Security tab. It still cannot push code or change releases. The actions
+are pinned by commit hash (SEC-002).
+
+**Tests:** the workflow itself, on every push. Results are reviewed in the
+Security tab, and any real finding is fixed before a release.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome
