@@ -25,6 +25,17 @@ NavigationPolicy::Decision NavigationPolicy::decideForPage(const QUrl &url)
     return Decision::Block;
 }
 
+NavigationPolicy::Decision NavigationPolicy::decideForNewWindow(const QUrl &url)
+{
+    // Loading it in place would unload the party page and drop the user from
+    // the party. xbox.com opens no windows of its own (docs/spike.md), so
+    // this is only ever a link someone clicked.
+    if (url.isValid() && url.scheme() == QLatin1String("https")) {
+        return Decision::OpenInBrowser;
+    }
+    return Decision::Block;
+}
+
 NavigationPolicy::Decision NavigationPolicy::decideForEmbeddedFrame(const QUrl &url)
 {
     Q_UNUSED(url)

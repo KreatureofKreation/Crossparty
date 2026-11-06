@@ -102,9 +102,15 @@ void WebSession::onNotification(QWebEngineNotification *notification)
 void WebSession::signOutAndWipe()
 {
     // The saved sign-in first, so nothing below can be saved again.
-    m_cookieVault->wipe();
+    const bool fileDeleted = m_cookieVault->wipe();
     m_profile->cookieStore()->deleteAllCookies();
     m_profile->clearHttpCache();
+    if (!fileDeleted) {
+        // Never claim a wipe that did not happen: stay open and say so.
+        qCWarning(lcWeb) << "Signed out, but the saved sign-in could not be deleted";
+        Q_EMIT wipeFailed(cookieFilePath());
+        return;
+    }
     qCInfo(lcWeb) << "Signed out and wiped; closing";
     // Everything else the page stored (local storage, databases, service
     // workers) is held only in this process's memory, and goes with it.
@@ -125,7 +131,7 @@ void WebSession::handleConsoleMessage(const QString &message, const QUrl &pageUr
 
 QWebEngineScript WebSession::inviteWatchScript() const
 {
-    return InviteWatch::script();
+    return m_inviteWatch.script();
 }
 
 void WebSession::onSecretReady(const QByteArray &secret)
@@ -185,21 +191,19 @@ void WebSession::handleNavigation(QWebEngineNavigationRequest *request) const
     }
 }
 
-bool WebSession::handleNewWindow(QWebEngineNewWindowRequest *request) const
+void WebSession::handleNewWindow(QWebEngineNewWindowRequest *request) const
 {
     const QUrl url = request->requestedUrl();
 
-    switch (NavigationPolicy::decideForPage(url)) {
-    case NavigationPolicy::Decision::LoadInApp:
-        return true;
+    switch (NavigationPolicy::decideForNewWindow(url)) {
     case NavigationPolicy::Decision::OpenInBrowser:
         openInBrowser(url);
-        return false;
+        return;
+    case NavigationPolicy::Decision::LoadInApp:
     case NavigationPolicy::Decision::Block:
         qCInfo(lcWeb) << "New window blocked:" << describeForLog(url);
-        return false;
+        return;
     }
-    return false;
 }
 
 void WebSession::handlePermission(const QWebEnginePermission &permission) const

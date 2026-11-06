@@ -188,7 +188,7 @@ Kirigami.ApplicationWindow {
                 visible: mainWindow.overlayOpen
                 icon.name: "window-duplicate"
                 text: qsTr("The party is in the overlay")
-                explanation: qsTr("Press Meta+Shift+X to bring it back here.")
+                explanation: GlobalShortcuts.overlayKeys.length > 0 ? qsTr("Press %1 to bring it back here.").arg(GlobalShortcuts.overlayKeys) : qsTr("Press the overlay button above to bring it back here.")
             }
         }
     }
@@ -199,6 +199,18 @@ Kirigami.ApplicationWindow {
 
     SignOutDialog {
         id: signOutDialog
+    }
+
+    // Shown only if Sign Out and Wipe could not delete the saved sign-in, so
+    // the user is never told everything was erased when it was not.
+    Kirigami.PromptDialog {
+        id: wipeFailedDialog
+
+        property string filePath
+
+        title: qsTr("Saved sign-in not deleted")
+        subtitle: qsTr("You are signed out for now, but Crossparty could not delete its saved sign-in, so it would sign you back in next time. Delete this file yourself, then quit Crossparty:\n\n%1").arg(filePath)
+        standardButtons: Kirigami.Dialog.Ok
     }
 
     BackgroundHolder {
@@ -227,6 +239,12 @@ Kirigami.ApplicationWindow {
 
         // The page gives no name, and none is shown: the toast only says that
         // an invite is waiting.
+        function onWipeFailed(filePath) {
+            signOutDialog.close();
+            wipeFailedDialog.filePath = filePath;
+            wipeFailedDialog.open();
+        }
+
         function onInviteArrived() {
             // A minimised window can still count as active on Wayland, so
             // "on screen" is checked as well.

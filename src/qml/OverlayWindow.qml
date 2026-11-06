@@ -75,12 +75,15 @@ Window {
 
                 QQC2.Label {
                     Layout.fillWidth: true
-                    text: MicrophoneMute.muted ? qsTr("Microphone muted") : qsTr("Microphone on")
+                    text: !MicrophoneMute.available ? qsTr("Mute unavailable") : MicrophoneMute.muted ? qsTr("Microphone muted") : qsTr("Microphone on")
                     elide: Text.ElideRight
                 }
 
+                // The user's own keys, which can differ from the defaults.
                 QQC2.Label {
-                    text: qsTr("Meta+Shift+M")
+                    visible: text.length > 0 && MicrophoneMute.available
+                    text: GlobalShortcuts.muteKeys
+                    textFormat: Text.PlainText
                     opacity: 0.7
                 }
             }

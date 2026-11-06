@@ -17,9 +17,18 @@
 class InviteWatch
 {
 public:
+    // Makes a new random report token for this run of the app.
+    InviteWatch();
+
     // The watcher script, run in Chromium's isolated world: it can read the
     // page but not reach the page's own code, and the page cannot reach it.
-    static QWebEngineScript script();
+    // The script carries this run's report token.
+    QWebEngineScript script() const;
+
+    // What every genuine report starts with. The random token in it is known
+    // only to the watcher script, so a frame or page script that writes a
+    // look-alike console message cannot fake or hide an invite.
+    QString reportPrefix() const;
 
     // Reads one console message from the page. Returns true only when the
     // message is a watcher report and the invite count has gone up since the
@@ -32,4 +41,5 @@ private:
     // seen is only a starting point, so an invite the user already knew about
     // never raises a toast twice.
     std::optional<int> m_count;
+    QString m_reportPrefix;
 };

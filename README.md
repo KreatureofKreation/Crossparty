@@ -106,6 +106,11 @@ running.
 - **Invite alerts can stop working** if Microsoft changes its page. Nothing
   else is affected, and a weekly check watches for it. There are no alerts
   for messages: the page gives no way to tell they arrived.
+- **Invite alerts work only when Microsoft's page is in English.** They read
+  the page's "1 invite" label, so with the page in another language no alert
+  appears. Party chat itself works in any language.
+- **Links that would open a new window open in your browser**, even links to
+  xbox.com, so the party page is never replaced and you stay in the party.
 - **Game Mode uses X11**, the only display Gamescope offers. X11 apps on the
   same display can see each other's key presses, so sign in on the desktop.
   On the desktop Crossparty never uses X11.

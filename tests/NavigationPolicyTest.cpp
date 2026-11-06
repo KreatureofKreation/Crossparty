@@ -19,6 +19,8 @@ class NavigationPolicyTest : public QObject
 private Q_SLOTS:
     void routesPageNavigation_data();
     void routesPageNavigation();
+    void routesNewWindows_data();
+    void routesNewWindows();
     void letsEmbeddedFramesLoad();
 };
 
@@ -52,6 +54,30 @@ void NavigationPolicyTest::routesPageNavigation()
     QFETCH(Decision, decision);
 
     QCOMPARE(NavigationPolicy::decideForPage(QUrl(address)), decision);
+}
+
+void NavigationPolicyTest::routesNewWindows_data()
+{
+    QTest::addColumn<QString>("address");
+    QTest::addColumn<Decision>("decision");
+
+    // Never in place of the party page, even for Microsoft's own sites.
+    QTest::newRow("xbox") << QStringLiteral("https://www.xbox.com/games/") << Decision::OpenInBrowser;
+    QTest::newRow("sign-in") << QStringLiteral("https://login.live.com/") << Decision::OpenInBrowser;
+    QTest::newRow("other https site") << QStringLiteral("https://example.com/video") << Decision::OpenInBrowser;
+
+    QTest::newRow("plain http") << QStringLiteral("http://example.com/") << Decision::Block;
+    QTest::newRow("local file") << QStringLiteral("file:///home/") << Decision::Block;
+    QTest::newRow("app link scheme") << QStringLiteral("steam://run/1") << Decision::Block;
+    QTest::newRow("empty") << QString() << Decision::Block;
+}
+
+void NavigationPolicyTest::routesNewWindows()
+{
+    QFETCH(QString, address);
+    QFETCH(Decision, decision);
+
+    QCOMPARE(NavigationPolicy::decideForNewWindow(QUrl(address)), decision);
 }
 
 void NavigationPolicyTest::letsEmbeddedFramesLoad()

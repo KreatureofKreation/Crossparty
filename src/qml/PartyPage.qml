@@ -17,11 +17,8 @@ WebEngineView {
     url: WebSession.ready ? WebSession.startUrl : ""
 
     onNavigationRequested: request => WebSession.handleNavigation(request)
-    onNewWindowRequested: request => {
-        if (WebSession.handleNewWindow(request)) {
-            partyPage.url = request.requestedUrl;
-        }
-    }
+    // Never loaded here: that would replace the party page.
+    onNewWindowRequested: request => WebSession.handleNewWindow(request)
     onPermissionRequested: permission => WebSession.handlePermission(permission)
     onJavaScriptConsoleMessage: (level, message, lineNumber, sourceId) => WebSession.handleConsoleMessage(message, partyPage.url)
 

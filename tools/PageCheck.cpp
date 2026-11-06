@@ -37,6 +37,12 @@ constexpr int pageHeight = 720;
 // finished loading, so it is looked at every few seconds instead.
 constexpr int lookEveryMilliseconds = 3000;
 constexpr int giveUpMilliseconds = 120000;
+// After the Guide button appears, the page is watched a little longer, so a
+// late redirect to a host outside the allowlist is still caught.
+constexpr int keepWatchingMilliseconds = 10000;
+// A last resort if the page never answers at all, so the check can never
+// hang until CI kills it.
+constexpr int hardLimitMilliseconds = giveUpMilliseconds + 30000;
 // Enough of the page's text to tell an error or block page from the app.
 constexpr int textSnippetLength = 300;
 
@@ -143,13 +149,21 @@ int main(int argc, char *argv[])
     QTimer look;
     look.setInterval(lookEveryMilliseconds);
     int waitedMilliseconds = 0;
+    bool guideSeen = false;
     QObject::connect(&look, &QTimer::timeout, &app, [&] {
         waitedMilliseconds += lookEveryMilliseconds;
         const bool timedOut = waitedMilliseconds >= giveUpMilliseconds;
-        page.runJavaScript(pageStateScript(), [&finish, timedOut](const QVariant &result) {
+        page.runJavaScript(pageStateScript(), [&finish, &guideSeen, &look, timedOut](const QVariant &result) {
             const QJsonObject state = QJsonDocument::fromJson(result.toString().toUtf8()).object();
-            if (state.value(QStringLiteral("guide")).toBool() || timedOut) {
-                finish(state, timedOut);
+            if (state.value(QStringLiteral("guide")).toBool() && !guideSeen) {
+                guideSeen = true;
+                look.stop();
+                report(QStringLiteral("Guide button found; watching for late redirects"));
+                QTimer::singleShot(keepWatchingMilliseconds, QCoreApplication::instance(), [&finish, state] {
+                    finish(state, false);
+                });
+            } else if (timedOut && !guideSeen) {
+                finish(state, true);
             }
         });
         if (timedOut) {
@@ -157,6 +171,11 @@ int main(int argc, char *argv[])
         }
     });
     look.start();
+
+    QTimer::singleShot(hardLimitMilliseconds, &app, [] {
+        report(QStringLiteral("FAIL: the page stopped answering; no result after %1 seconds").arg(hardLimitMilliseconds / 1000));
+        QCoreApplication::exit(EXIT_FAILURE);
+    });
 
     page.load(SiteAllowlist::startUrl());
     return QApplication::exec();
