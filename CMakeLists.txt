@@ -43,3 +43,5 @@ if(BUILD_TESTING)
 endif()
 
 install(FILES data/${CROSSPARTY_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES data/${CROSSPARTY_APP_ID}.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+install(FILES data/icons/${CROSSPARTY_APP_ID}.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)

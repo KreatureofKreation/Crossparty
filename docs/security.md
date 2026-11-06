@@ -404,6 +404,12 @@ Handheld mode itself is chosen from environment variables only
 corner notices and background holder, which need the Wayland layer Gamescope
 does not have.
 
+X11 also needs `--share=ipc`: X11 passes images through shared memory, and
+Flathub rejects X11 without it. This shares the host's System V IPC namespace
+(shared memory and semaphores) with the app, not files or sockets; it is the
+standard pairing on Flathub and adds little beyond X11 itself
+_(amended 2026-11-06)_.
+
 **Tests:** `tests/GameModeDetectionTest.cpp` checks the detection and the
 override. The X11 fallback is manual: nested Gamescope on the desktop (see
 docs/plan.md, Handheld testing without a handheld).

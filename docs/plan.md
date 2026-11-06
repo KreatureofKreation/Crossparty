@@ -493,9 +493,21 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 | 1. Spike (throwaway) | Every test in the spike table run inside a Flatpak build; results in docs/spike.md; confirm Qt or switch to Electron | Done: Qt _(amended 2026-11-05)_ |
 | 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Done _(amended 2026-11-06)_ |
 | 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | Done _(amended 2026-11-06)_ |
-| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Next |
-| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | |
+| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Done _(amended 2026-11-06)_ |
+| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | Next |
 | 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | |
+
+### Stage 5 pull requests _(added 2026-11-06)_
+
+1. Flatpak manifest finalised: AppStream metainfo and an app icon,
+   flatpak-builder-lint clean on the manifest and the build, run by
+   dev/flatpak-build.sh and CI. The build is offline (every source pinned, no
+   network while building). Screenshots are left to stage 6, as a recorded
+   lint exception, because they need a public URL and a picture with no
+   account details in it.
+2. CodeQL security scanning in CI.
+3. The threat model written up in docs/security.md.
+4. OpenTofu config for the repo settings, with encrypted state.
 
 ### Stage 4 pull requests _(added 2026-11-06)_
 
