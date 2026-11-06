@@ -3,7 +3,7 @@
 Every release is listed here in plain English. Versions follow semantic
 versioning: patch for fixes, minor for features, major for breaking changes.
 
-## Unreleased (0.1.0)
+## 0.1.0 - 2026-11-07
 
 The first release.
 
