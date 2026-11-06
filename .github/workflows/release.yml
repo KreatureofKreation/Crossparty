@@ -17,8 +17,24 @@ permissions:
   contents: read
 
 jobs:
+  # Seconds, before the long uncached build: a tag that is not on main is
+  # refused straight away. The publish job checks again before writing.
+  on-main:
+    name: Check the tag is on main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
   build:
     name: Build the release bundle
+    needs: on-main
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11@sha256:b0a8a2acb9e420dd0e3e083ff552bea5a817e17e41532f1d2287ff49ef9aae0e

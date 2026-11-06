@@ -3,11 +3,18 @@
 
 #include "InviteWatch.h"
 
+#include <QRandomGenerator>
+
+#include <array>
+
 namespace
 {
 
-constexpr char reportPrefix[] = "crossparty:invites=";
 constexpr char unknownCount[] = "none";
+// Where the script source gets this run's report prefix.
+constexpr char prefixPlaceholder[] = "CROSSPARTY_REPORT_PREFIX";
+// 128 random bits: far too many to guess.
+constexpr int tokenWords = 4;
 // Far more than anyone gets; anything bigger is not a real report.
 constexpr int largestCount = 999;
 
@@ -18,7 +25,7 @@ constexpr int largestCount = 999;
 constexpr char watcherSource[] = R"JS(
 (() => {
   "use strict";
-  const prefix = "crossparty:invites=";
+  const prefix = "CROSSPARTY_REPORT_PREFIX";
   // Wider than this, the button exists but never shows the invite label, so
   // its count means nothing.
   const narrowestWide = 481;
@@ -62,11 +69,27 @@ constexpr char watcherSource[] = R"JS(
 )JS";
 }
 
-QWebEngineScript InviteWatch::script()
+InviteWatch::InviteWatch()
+{
+    std::array<quint32, tokenWords> token{};
+    QRandomGenerator::system()->fillRange(token.data(), token.size());
+    QString hex;
+    for (const quint32 word : token) {
+        hex += QStringLiteral("%1").arg(word, 8, 16, QLatin1Char('0'));
+    }
+    m_reportPrefix = QStringLiteral("crossparty:") + hex + QStringLiteral(":invites=");
+}
+
+QString InviteWatch::reportPrefix() const
+{
+    return m_reportPrefix;
+}
+
+QWebEngineScript InviteWatch::script() const
 {
     QWebEngineScript script;
     script.setName(QStringLiteral("crossparty-invite-watch"));
-    script.setSourceCode(QString::fromLatin1(watcherSource));
+    script.setSourceCode(QString::fromLatin1(watcherSource).replace(QLatin1String(prefixPlaceholder), m_reportPrefix));
     script.setInjectionPoint(QWebEngineScript::DocumentReady);
     script.setWorldId(QWebEngineScript::ApplicationWorld);
     // The main page only, never frames from other sites.
@@ -76,10 +99,10 @@ QWebEngineScript InviteWatch::script()
 
 bool InviteWatch::handleReport(const QString &message)
 {
-    if (!message.startsWith(QLatin1String(reportPrefix))) {
+    if (!message.startsWith(m_reportPrefix)) {
         return false;
     }
-    const QStringView value = QStringView(message).mid(qsizetype(sizeof(reportPrefix) - 1));
+    const QStringView value = QStringView(message).mid(m_reportPrefix.size());
     if (value == QLatin1String(unknownCount)) {
         m_count.reset();
         return false;

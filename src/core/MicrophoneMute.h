@@ -47,14 +47,19 @@ private:
     static void onContextState(pa_context *context, void *self);
     static void onStreamEvent(pa_context *context, pa_subscription_event_type_t eventType, uint32_t index, void *self);
     static void onStreamInfo(pa_context *context, const pa_source_output_info *info, int isLast, void *self);
+    static void onExistingStreamInfo(pa_context *context, const pa_source_output_info *info, int isLast, void *self);
     static void onMuteApplied(pa_context *context, int success, void *self);
 
-    void handleStream(const pa_source_output_info &info);
+    // existing: the stream was already there when the connection was made,
+    // so its state is followed rather than overruled.
+    void handleStream(const pa_source_output_info &info, bool existing);
     void setStreamMuted(uint32_t index, bool muted);
     void setAvailable(bool available);
+    void connectToServer();
+    void onConnectionLost();
 
     pa_glib_mainloop *m_mainloop;
-    pa_context *m_context;
+    pa_context *m_context = nullptr;
     QString m_ourAppId;
     // Our streams, by PipeWire's index, with their last known mute state.
     QHash<uint32_t, bool> m_streams;

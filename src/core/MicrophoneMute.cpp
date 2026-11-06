@@ -7,6 +7,9 @@
 
 #include <QGuiApplication>
 #include <QLoggingCategory>
+#include <QTimer>
+
+#include <chrono>
 
 Q_LOGGING_CATEGORY(lcMicrophone, "crossparty.microphone", QtInfoMsg)
 
@@ -25,6 +28,10 @@ QString flatpakAppId()
     return qEnvironmentVariable("FLATPAK_ID");
 }
 
+// The sound server restarts after updates and some device changes. The app
+// tries again this often until it is back.
+constexpr std::chrono::seconds reconnectDelay{3};
+
 void finish(pa_operation *operation)
 {
     if (operation) {
@@ -36,26 +43,58 @@ void finish(pa_operation *operation)
 MicrophoneMute::MicrophoneMute(QObject *parent)
     : QObject(parent)
     , m_mainloop(pa_glib_mainloop_new(nullptr))
-    , m_context(pa_context_new(pa_glib_mainloop_get_api(m_mainloop), "Crossparty"))
     , m_ourAppId(flatpakAppId())
 {
     if (m_ourAppId.isEmpty()) {
         qCWarning(lcMicrophone) << "Not running in Flatpak; the mute cannot tell which stream is ours, so it is off";
         return;
     }
-    pa_context_set_state_callback(m_context, &MicrophoneMute::onContextState, this);
-    if (pa_context_connect(m_context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
-        qCWarning(lcMicrophone) << "Could not reach the sound server";
-    }
+    connectToServer();
 }
 
 MicrophoneMute::~MicrophoneMute()
 {
-    pa_context_set_state_callback(m_context, nullptr, nullptr);
-    pa_context_set_subscribe_callback(m_context, nullptr, nullptr);
-    pa_context_disconnect(m_context);
-    pa_context_unref(m_context);
+    if (m_context) {
+        pa_context_set_state_callback(m_context, nullptr, nullptr);
+        pa_context_set_subscribe_callback(m_context, nullptr, nullptr);
+        pa_context_disconnect(m_context);
+        pa_context_unref(m_context);
+    }
     pa_glib_mainloop_free(m_mainloop);
+}
+
+void MicrophoneMute::connectToServer()
+{
+    // A failed connection cannot be reused; each try gets a new one.
+    if (m_context) {
+        pa_context_set_state_callback(m_context, nullptr, nullptr);
+        pa_context_set_subscribe_callback(m_context, nullptr, nullptr);
+        pa_context_disconnect(m_context);
+        pa_context_unref(m_context);
+    }
+    m_context = pa_context_new(pa_glib_mainloop_get_api(m_mainloop), "Crossparty");
+    pa_context_set_state_callback(m_context, &MicrophoneMute::onContextState, this);
+    if (pa_context_connect(m_context, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
+        qCWarning(lcMicrophone) << "Could not reach the sound server";
+        onConnectionLost();
+    }
+}
+
+void MicrophoneMute::onConnectionLost()
+{
+    m_streams.clear();
+    m_pendingMuteChanges = 0;
+    setAvailable(false);
+    // Fail safe: the app can no longer mute anything, so it must not say the
+    // microphone is muted. When the connection is back, the streams' real
+    // state is followed.
+    if (m_muted) {
+        m_muted = false;
+        qCWarning(lcMicrophone) << "Lost the sound server; the mute is off until it is back";
+        Q_EMIT mutedChanged();
+    }
+    // Never from inside the old connection's own callback.
+    QTimer::singleShot(reconnectDelay, this, &MicrophoneMute::connectToServer);
 }
 
 bool MicrophoneMute::isMuted() const
@@ -66,6 +105,13 @@ bool MicrophoneMute::isMuted() const
 void MicrophoneMute::setMuted(bool muted)
 {
     if (muted == m_muted) {
+        return;
+    }
+    if (!m_available) {
+        // Fail safe: with no way to mute the stream, the app never claims it
+        // did. This covers the hotkey, which works even when the buttons are
+        // disabled.
+        qCWarning(lcMicrophone) << "The mute is not available; nothing changed";
         return;
     }
     m_muted = muted;
@@ -103,14 +149,12 @@ void MicrophoneMute::onContextState(pa_context *context, void *self)
         // already exist.
         pa_context_set_subscribe_callback(context, &MicrophoneMute::onStreamEvent, self);
         finish(pa_context_subscribe(context, PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT, nullptr, nullptr));
-        finish(pa_context_get_source_output_info_list(context, &MicrophoneMute::onStreamInfo, self));
+        finish(pa_context_get_source_output_info_list(context, &MicrophoneMute::onExistingStreamInfo, self));
         mute->setAvailable(true);
         return;
     case PA_CONTEXT_FAILED:
     case PA_CONTEXT_TERMINATED:
-        mute->m_streams.clear();
-        mute->m_pendingMuteChanges = 0;
-        mute->setAvailable(false);
+        mute->onConnectionLost();
         return;
     default:
         return;
@@ -132,18 +176,28 @@ void MicrophoneMute::onStreamInfo(pa_context *context, const pa_source_output_in
 {
     Q_UNUSED(context)
     if (isLast == 0 && info) {
-        static_cast<MicrophoneMute *>(self)->handleStream(*info);
+        static_cast<MicrophoneMute *>(self)->handleStream(*info, false);
     }
 }
 
-void MicrophoneMute::handleStream(const pa_source_output_info &info)
+void MicrophoneMute::onExistingStreamInfo(pa_context *context, const pa_source_output_info *info, int isLast, void *self)
+{
+    Q_UNUSED(context)
+    if (isLast == 0 && info) {
+        static_cast<MicrophoneMute *>(self)->handleStream(*info, true);
+    }
+}
+
+void MicrophoneMute::handleStream(const pa_source_output_info &info, bool existing)
 {
     const QString streamAppId = QString::fromUtf8(pa_proplist_gets(info.proplist, MicrophoneStreams::appIdProperty));
     if (!MicrophoneStreams::isOurs(streamAppId, m_ourAppId)) {
         return;
     }
 
-    const bool isNew = !m_streams.contains(info.index);
+    // A stream that outlived a lost connection keeps its own state: the
+    // app's choice was reset when the connection went, and must not unmute it.
+    const bool isNew = !existing && !m_streams.contains(info.index);
     const bool streamIsMuted = info.mute != 0;
     m_streams.insert(info.index, streamIsMuted);
 

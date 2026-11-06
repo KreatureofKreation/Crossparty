@@ -254,8 +254,10 @@ draw the overlay as a layer surface).
 `login.microsoftonline.com` and `account.live.com`, over https on the standard port, with no user name in the
 address. Any other https link opens in the user's default browser, through the
 OpenURI portal. Everything else (plain http, `file:`, `data:`, `javascript:`,
-other apps' link schemes) is blocked. Requests to open a new window follow the
-same rules, and downloads are refused.
+other apps' link schemes) is blocked. Requests to open a new window never load
+in the app, even for the hosts above: the one page holds the party, and
+loading anything in its place would drop the user from it. Any https address
+opens in the browser and everything else is blocked. Downloads are refused.
 
 **Why:** The main attack path is a link in party text chat. Inside the app, a
 malicious page would sit next to the Microsoft session and the microphone
@@ -355,7 +357,12 @@ chat (SEC-012).
 
 **Fail safe:** outside Flatpak there is no trustworthy app ID, so the mute
 button is disabled rather than guessing. If the sound server cannot be
-reached, the button is disabled too.
+reached, the button is disabled too, and the hotkey does nothing: the app
+never shows "muted" when it cannot mute. If the connection is lost while
+muted, the app shows the microphone as on (the overlay says "Mute
+unavailable") and tries to reconnect every 3 seconds. Once back, it follows
+each stream's real state rather than applying an old choice, so a stream
+that stayed muted is never unmuted.
 
 **Tests:** `tests/MicrophoneStreamsTest.cpp` (which streams count as ours,
 and what happens to new and changed streams).
@@ -412,8 +419,11 @@ message, and only once the count has held steady for 5 seconds, so the
 label appearing late or flickering never looks like a new invite. It never
 changes the page, clicks anything, or reads names or
 messages. The app acts on a report only when the page is on the allowlist
-(SEC-010), and a report can do one thing: show a toast with fixed text, "Party
-invite". To make the count visible while the user is in a game, the page is
+(SEC-010) and the report carries this run's token: 128 random bits made at
+startup and written only into the script's source. The page and its frames
+can write console messages too, but they cannot read an isolated-world
+script, so they cannot fake or hide a report. A report can do one thing:
+show a toast with fixed text, "Party invite". To make the count visible while the user is in a game, the page is
 laid out at the overlay's narrow width whenever the window is not on screen.
 Chromium only lays out a page in a window that is being drawn, and KDE stops
 drawing minimised windows, so the page then moves to a one-pixel, transparent,
@@ -433,8 +443,6 @@ one number is the smallest thing that works. Because the toast text is fixed,
 nothing a stranger writes can appear above a game.
 
 **Limits, accepted:**
-- The page itself could log a fake report. The worst result is a false
-  "Party invite" toast.
 - If Microsoft renames the button or changes its wording, the reports stop
   and so do the toasts; nothing else breaks. A weekly check watches for this
   (`docs/plan.md`, Scheduled checks). The wording match is English only.
@@ -442,7 +450,9 @@ nothing a stranger writes can appear above a game.
 
 **Tests:** `tests/InviteWatchTest.cpp` checks that only a rising count raises
 a toast, that a count seen again after the wide layout does not, that every
-other message is ignored, and that the script is isolated and main-page only.
+other message is ignored (including reports without this run's token), that
+each run has its own token, and that the script is isolated and main-page
+only.
 
 ### SEC-018: Sign out and wipe leaves nothing behind
 
@@ -453,6 +463,11 @@ menu, asks once (Cancel is the default button), then:
    nothing can be written again in this run.
 2. Deletes every cookie in the web profile and the HTTP cache.
 3. Closes the app.
+
+**Fail safe:** if the file cannot be deleted, the app does not close or claim
+success. Steps 1 and 2 still happen, so the user is signed out for this run,
+and a dialog names the file to delete by hand; otherwise it would sign them
+back in next time.
 
 **Why:** On a shared or lost device, one action must remove access to the
 Microsoft account from Crossparty. The web profile is in-memory (SEC-009), so
@@ -566,8 +581,11 @@ config was written. Each apply is checked by reading its plan first.
 **Decision:** A scheduled workflow runs weekly:
 
 - `tools/PageCheck` loads Microsoft's page signed out at the overlay's narrow
-  width. It fails if the page goes to a host outside the allowlist, or if the
-  Guide button the invite watcher reads is gone.
+  width. It fails if the page goes to a host outside the allowlist (watching
+  for 10 more seconds after the Guide button appears, to catch late
+  redirects), or if the Guide button the invite watcher reads is gone. It
+  stops itself after 150 seconds even if the page never answers, and each
+  job has a timeout, so a stuck run cannot hold a runner for hours.
 - `dev/check-updates.sh` compares the manifest with the newest KDE runtime,
   QtWebEngine base app and layer-shell-qt.
 
@@ -600,10 +618,12 @@ the app and the page check is on the allowlist.
 
 **Decision:** Pushing a `v*` tag runs `.github/workflows/release.yml`:
 
-1. A read-only job checks the tag matches the version in CMakeLists.txt, the
+1. A quick read-only job checks the tagged commit is on `main`, so a tag
+   pushed anywhere else is refused in seconds, before the long build.
+2. A read-only job checks the tag matches the version in CMakeLists.txt, the
    metainfo and CHANGELOG.md (`dev/release-notes.sh`), then builds the
    Flatpak bundle from scratch, with no build cache.
-2. A second job checks the tagged commit is on `main`, then publishes the
+3. A third job checks again that the commit is on `main`, then publishes the
    bundle, its SHA-256 checksum and a build provenance attestation as a
    GitHub release.
 

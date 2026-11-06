@@ -60,6 +60,8 @@ GlobalShortcuts::GlobalShortcuts(QObject *parent)
     // clang-format off
     QDBusConnection::sessionBus().connect(QLatin1String(portalService), QLatin1String(portalPath), QLatin1String(shortcutsInterface),
                                           QStringLiteral("Activated"), this, SLOT(onActivated(QDBusObjectPath,QString,qulonglong,QVariantMap)));
+    QDBusConnection::sessionBus().connect(QLatin1String(portalService), QLatin1String(portalPath), QLatin1String(shortcutsInterface),
+                                          QStringLiteral("ShortcutsChanged"), this, SLOT(onShortcutsChanged(QDBusMessage)));
     // clang-format on
 
     createSession();
@@ -114,9 +116,40 @@ void GlobalShortcuts::onBindShortcutsResponse(uint response, const QVariantMap &
         return;
     }
     const auto bound = qdbus_cast<PortalShortcutList>(results.value(QStringLiteral("shortcuts")).value<QDBusArgument>());
-    for (const PortalShortcut &shortcut : bound) {
-        qCInfo(lcShortcuts) << "Hotkey" << shortcut.id << "is" << shortcut.properties.value(QStringLiteral("trigger_description")).toString();
+    updateKeys(bound);
+}
+
+void GlobalShortcuts::onShortcutsChanged(const QDBusMessage &message)
+{
+    const QList<QVariant> arguments = message.arguments();
+    if (arguments.size() < 2 || arguments.at(0).value<QDBusObjectPath>().path() != m_sessionHandle) {
+        return;
     }
+    updateKeys(qdbus_cast<PortalShortcutList>(arguments.at(1).value<QDBusArgument>()));
+}
+
+void GlobalShortcuts::updateKeys(const PortalShortcutList &shortcuts)
+{
+    QHash<QString, QString> keys;
+    for (const PortalShortcut &shortcut : shortcuts) {
+        const QString description = shortcut.properties.value(QStringLiteral("trigger_description")).toString();
+        qCInfo(lcShortcuts) << "Hotkey" << shortcut.id << "is" << description;
+        keys.insert(shortcut.id, description);
+    }
+    if (keys != m_keys) {
+        m_keys = keys;
+        Q_EMIT keysChanged();
+    }
+}
+
+QString GlobalShortcuts::muteKeys() const
+{
+    return m_keys.value(QLatin1String(toggleMuteId));
+}
+
+QString GlobalShortcuts::overlayKeys() const
+{
+    return m_keys.value(QLatin1String(toggleOverlayId));
 }
 
 void GlobalShortcuts::onActivated(const QDBusObjectPath &sessionHandle, const QString &shortcutId, qulonglong timestamp, const QVariantMap &options)

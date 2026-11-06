@@ -44,16 +44,17 @@ public:
     QWebEngineScript inviteWatchScript() const;
 
     Q_INVOKABLE void handleNavigation(QWebEngineNavigationRequest *request) const;
-    // Returns true if the view should load the address itself. Otherwise the
-    // address has been sent to the browser, or blocked.
-    Q_INVOKABLE bool handleNewWindow(QWebEngineNewWindowRequest *request) const;
+    // The address goes to the browser, or is blocked. The party page is
+    // never replaced.
+    Q_INVOKABLE void handleNewWindow(QWebEngineNewWindowRequest *request) const;
     Q_INVOKABLE void handlePermission(const QWebEnginePermission &permission) const;
-    // Every console message from the page. Invite watcher reports are acted
-    // on; anything else is only logged at debug level.
     // Signs out and erases all session data, then quits: the profile lives
     // only in memory, so closing the app is what erases page storage. See
-    // docs/security.md#sec-018.
+    // docs/security.md#sec-018. If the saved sign-in cannot be deleted, it
+    // stays open and emits wipeFailed instead.
     Q_INVOKABLE void signOutAndWipe();
+    // Every console message from the page. Invite watcher reports are acted
+    // on; anything else is only logged at debug level.
     Q_INVOKABLE void handleConsoleMessage(const QString &message, const QUrl &pageUrl);
 
 Q_SIGNALS:
@@ -63,6 +64,9 @@ Q_SIGNALS:
     void notificationArrived(const QString &title, const QString &message);
     // The page's invite count went up. Carries no names or other page text.
     void inviteArrived();
+    // The saved sign-in file could not be deleted. The user must delete it
+    // themselves, or it signs them back in next time.
+    void wipeFailed(const QString &filePath);
 
 private:
     void onNotification(QWebEngineNotification *notification);

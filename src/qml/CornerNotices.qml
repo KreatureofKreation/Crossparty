@@ -105,9 +105,11 @@ Window {
                     visible: text.length > 0
                 }
 
+                // The user's own keys; no hint if the hotkey is not set.
                 QQC2.Label {
                     width: parent.width
-                    text: qsTr("Meta+Shift+X opens the party")
+                    visible: GlobalShortcuts.overlayKeys.length > 0
+                    text: qsTr("%1 opens the party").arg(GlobalShortcuts.overlayKeys)
                     textFormat: Text.PlainText
                     opacity: 0.7
                 }
