@@ -37,7 +37,7 @@ qt_add_library(crossparty_ui STATIC)
 qt_add_qml_module(crossparty_ui
     URI Crossparty
     OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Crossparty
-    QML_FILES qml/BackgroundHolder.qml qml/CornerNotices.qml qml/Main.qml qml/OverlayWindow.qml qml/PartyPage.qml qml/TopBar.qml qml/WindowEdges.qml
+    QML_FILES qml/BackgroundHolder.qml qml/CornerNotices.qml qml/Main.qml qml/OverlayWindow.qml qml/PartyPage.qml qml/SignOutDialog.qml qml/TopBar.qml qml/WindowEdges.qml
     SOURCES core/AppSettings.cpp core/AppSettings.h core/GlobalShortcuts.cpp core/GlobalShortcuts.h core/MicrophoneMute.cpp core/MicrophoneMute.h core/TrayIcon.cpp core/TrayIcon.h core/WebSession.cpp core/WebSession.h core/WindowExposure.cpp core/WindowExposure.h
     NO_IMPORT_SCAN
 )

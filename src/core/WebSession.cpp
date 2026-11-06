@@ -14,6 +14,7 @@
 #include <QLoggingCategory>
 #include <QQuickWebEngineDownloadRequest>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QWebEngineCookieStore>
 
 Q_LOGGING_CATEGORY(lcWeb, "crossparty.web", QtInfoMsg)
@@ -96,6 +97,18 @@ void WebSession::onNotification(QWebEngineNotification *notification)
     // Tells the page its notification was shown. Its text is never logged.
     notification->show();
     Q_EMIT notificationArrived(notification->title(), notification->message());
+}
+
+void WebSession::signOutAndWipe()
+{
+    // The saved sign-in first, so nothing below can be saved again.
+    m_cookieVault->wipe();
+    m_profile->cookieStore()->deleteAllCookies();
+    m_profile->clearHttpCache();
+    qCInfo(lcWeb) << "Signed out and wiped; closing";
+    // Everything else the page stored (local storage, databases, service
+    // workers) is held only in this process's memory, and goes with it.
+    QTimer::singleShot(0, QCoreApplication::instance(), &QCoreApplication::quit);
 }
 
 void WebSession::handleConsoleMessage(const QString &message, const QUrl &pageUrl)

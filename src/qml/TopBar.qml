@@ -18,6 +18,7 @@ QQC2.ToolBar {
     property bool overlayOpen: false
 
     signal overlayToggleRequested
+    signal signOutRequested
 
     function toggleMaximised() {
         if (isMaximised) {
@@ -75,6 +76,26 @@ QQC2.ToolBar {
             checked: MicrophoneMute.muted
             enabled: MicrophoneMute.available
             onClicked: MicrophoneMute.toggle()
+        }
+
+        TopBarButton {
+            id: menuButton
+
+            text: qsTr("More options")
+            icon.name: "application-menu"
+            checkable: true
+            checked: optionsMenu.visible
+            onClicked: optionsMenu.popup(menuButton, 0, menuButton.height)
+
+            QQC2.Menu {
+                id: optionsMenu
+
+                QQC2.MenuItem {
+                    text: qsTr("Sign Out and Wipe…")
+                    icon.name: "system-log-out"
+                    onTriggered: topBar.signOutRequested()
+                }
+            }
         }
 
         Kirigami.Separator {

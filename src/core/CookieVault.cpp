@@ -103,6 +103,22 @@ void CookieVault::saveNow()
     }
 }
 
+bool CookieVault::wipe()
+{
+    m_saveTimer.stop();
+    // No more saving from here on: without a key nothing is ever written.
+    disconnect(m_cookieStore, nullptr, this, nullptr);
+    m_key.fill('\0');
+    m_key.clear();
+    m_cookies.clear();
+    if (QFile::exists(m_filePath) && !QFile::remove(m_filePath)) {
+        qCWarning(lcVault) << "Could not delete the cookie file";
+        return false;
+    }
+    qCInfo(lcVault) << "Saved sign-in deleted";
+    return true;
+}
+
 void CookieVault::onCookieAdded(const QNetworkCookie &cookie)
 {
     m_cookies.insert(keyFor(cookie), cookie);

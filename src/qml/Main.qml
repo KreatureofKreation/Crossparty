@@ -113,6 +113,11 @@ Kirigami.ApplicationWindow {
         function onShowRequested() {
             mainWindow.bringToFront();
         }
+
+        function onSignOutRequested() {
+            mainWindow.bringToFront();
+            signOutDialog.open();
+        }
     }
 
     Connections {
@@ -132,6 +137,7 @@ Kirigami.ApplicationWindow {
             window: mainWindow
             overlayOpen: mainWindow.overlayOpen
             onOverlayToggleRequested: mainWindow.toggleOverlay()
+            onSignOutRequested: signOutDialog.open()
         }
 
         Item {
@@ -162,6 +168,10 @@ Kirigami.ApplicationWindow {
 
     OverlayWindow {
         id: overlay
+    }
+
+    SignOutDialog {
+        id: signOutDialog
     }
 
     BackgroundHolder {

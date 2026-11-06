@@ -27,6 +27,8 @@ public:
 
 Q_SIGNALS:
     void showRequested();
+    // The user chose Sign out and wipe; the window asks to confirm first.
+    void signOutRequested();
 
 private:
     void onActivated(QSystemTrayIcon::ActivationReason reason);

@@ -14,6 +14,7 @@ TrayIcon::TrayIcon(QObject *parent)
 
     m_menu.addAction(QIcon::fromTheme(QStringLiteral("window")), tr("Show Crossparty"), this, &TrayIcon::showRequested);
     m_menu.addSeparator();
+    m_menu.addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), tr("Sign Out and Wipe…"), this, &TrayIcon::signOutRequested);
     m_menu.addAction(QIcon::fromTheme(QStringLiteral("application-exit")), tr("Quit"), qApp, &QCoreApplication::quit);
     m_icon.setContextMenu(&m_menu);
 

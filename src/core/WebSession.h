@@ -50,6 +50,10 @@ public:
     Q_INVOKABLE void handlePermission(const QWebEnginePermission &permission) const;
     // Every console message from the page. Invite watcher reports are acted
     // on; anything else is only logged at debug level.
+    // Signs out and erases all session data, then quits: the profile lives
+    // only in memory, so closing the app is what erases page storage. See
+    // docs/security.md#sec-018.
+    Q_INVOKABLE void signOutAndWipe();
     Q_INVOKABLE void handleConsoleMessage(const QString &message, const QUrl &pageUrl);
 
 Q_SIGNALS:

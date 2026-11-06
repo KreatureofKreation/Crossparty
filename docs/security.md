@@ -357,6 +357,31 @@ nothing a stranger writes can appear above a game.
 a toast, that a count seen again after the wide layout does not, that every
 other message is ignored, and that the script is isolated and main-page only.
 
+### SEC-018: Sign out and wipe leaves nothing behind
+
+**Decision:** Sign out and wipe, in the top bar's options menu and the tray
+menu, asks once (Cancel is the default button), then:
+
+1. Deletes the encrypted cookie file, forgets its key, and stops saving, so
+   nothing can be written again in this run.
+2. Deletes every cookie in the web profile and the HTTP cache.
+3. Closes the app.
+
+**Why:** On a shared or lost device, one action must remove access to the
+Microsoft account from Crossparty. The web profile is in-memory (SEC-009), so
+local storage, databases, service workers and visited links exist only in the
+running process, but QtWebEngine has no call to clear them; ending the process
+is the one way to be sure they are gone. The vault is wiped first so that the cookie
+deletions in step 2 can never be saved as a new file. The secret stored in
+KWallet through the Secret portal is not removed (the portal has no call for
+it); without the file it protects nothing, and a new file made after the next
+sign-in uses it again. Settings (the window size) are not session data and
+are kept.
+
+**Tests:** manual (docs/plan.md, Manual checklist: "Sign out and wipe leaves
+no session data"). The cookie store cannot run inside the build sandbox, so
+there is no unit test.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome

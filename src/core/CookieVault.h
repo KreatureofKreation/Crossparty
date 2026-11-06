@@ -28,6 +28,11 @@ public:
     // Writes the file now instead of waiting for the next quiet moment.
     void saveNow();
 
+    // Sign out and wipe: forgets the key and every cookie it knew, stops
+    // saving, and deletes the file. Returns false if the file could not be
+    // deleted. See docs/security.md#sec-018.
+    bool wipe();
+
 private:
     void onCookieAdded(const QNetworkCookie &cookie);
     void onCookieRemoved(const QNetworkCookie &cookie);

@@ -55,6 +55,7 @@ plan is recorded here before it is built.
 | Overlay content | The same live page moves between the window and the overlay _(added 2026-11-05)_ | Keeps one party connection. Tested: the party stayed connected both ways, over a full-screen game |
 | Window position | Remember size only; position is left to KDE _(amended 2026-11-05)_ | Wayland does not let apps place their own windows. A KWin window rule can remember position; documented in the README |
 | Invite toasts | A read-only watcher script, in Chromium's isolated world, reads the invite count on the page's Guide button. While the window is hidden or minimised, the page is laid out at the overlay's narrow width so that count is shown _(added 2026-11-06)_ | xbox.com sends no browser notifications and has no pop-ups of its own in a browser; the narrow layout's "1 invite" label is the only signal (tested). The one exception to "no scripting": it reads one label and reports a number. Message alerts are dropped: their only counter is inside the Guide, and opening it clears them. The start page moves to play.xbox.com, Microsoft's newer app, because only it has the invite count. See SEC-017 |
+| Sign out and wipe | Erases the saved sign-in file, cookies and cache, then closes the app _(added 2026-11-06)_ | Page storage (local storage, databases) lives only in the in-memory profile, and QtWebEngine has no call to clear it, so closing is the only complete wipe. One confirmation, Cancel by default. See SEC-018 |
 
 **Priority (decided 4 Nov):** private use first; public distribution is a
 bonus. Security, sandboxing, clean code and the Flatpak build stay in scope
@@ -477,11 +478,19 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 |---|---|---|
 | 0. Setup | Trademark check; second Microsoft account and a test partner; GitHub 2FA with a hardware key; GitHub username and app ID chosen (permanent); repo, Distrobox dev container, formatters, linters and pre-commit hooks from the first commit; minimal CI (build, lint, unit tests on every push) | Done, except hardware-key 2FA _(amended 2026-11-05)_ |
 | 1. Spike (throwaway) | Every test in the spike table run inside a Flatpak build; results in docs/spike.md; confirm Qt or switch to Electron | Done: Qt _(amended 2026-11-05)_ |
-| 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Next |
-| 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | |
-| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | |
+| 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Done _(amended 2026-11-06)_ |
+| 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | Done _(amended 2026-11-06)_ |
+| 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Next |
 | 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | |
 | 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | |
+
+### Stage 4 pull requests _(added 2026-11-06)_
+
+1. Sign out and wipe: an options menu in the top bar and a tray menu entry,
+   one confirmation, then the saved sign-in, cookies and cache are erased and
+   the app closes (SEC-018).
+2. Handheld mode: Game Mode detection, full-screen controller layout, tested
+   in nested Gamescope.
 
 ### Stage 3 pull requests _(added 2026-11-05)_
 
