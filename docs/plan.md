@@ -209,6 +209,9 @@ other link to your default browser.
 The biggest risks are a stolen Microsoft session, a hijacked mic, and a
 tampered download; the main attack path is a link in party text chat.
 
+The full threat model is in [security.md](security.md#threat-model); this
+section is the summary _(amended 2026-11-06)_.
+
 ### Assets
 
 | Asset | Why it matters |
@@ -226,7 +229,7 @@ tampered download; the main attack path is a link in party text chat.
 | Page escapes into the system | Flatpak sandbox around the whole app, plus Chromium's own sandbox, confirmed running inside Flatpak _(amended 2026-11-05)_; no native bridges exposed to the page |
 | Over-granted permissions | Deny by default; mic, speakers and notifications for allowlisted origins only |
 | Cookie theft from disk | Web data kept in memory; cookies saved encrypted with a key from the Secret portal (KWallet) _(amended 2026-11-05)_ |
-| Keystroke snooping | Native Wayland only; no X11 socket |
+| Keystroke snooping | Native Wayland only on the desktop; X11 only in Steam's Game Mode, which offers nothing else _(amended 2026-11-06)_ |
 | Stale browser engine | QtWebEngine patched through the KDE runtime; risk accepted because only Microsoft origins load |
 | Compromised dependency | Minimal dependencies, pinned versions, offline builds, Dependabot |
 | Tampered release | Builds only in CI, build attestation, Flathub or GPG-signed repo |
@@ -507,7 +510,10 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    account details in it.
 2. CodeQL security scanning in CI: C++ and the workflows, without a build, on
    every push and weekly (SEC-020).
-3. The threat model written up in docs/security.md.
+3. The threat model written up in docs/security.md: trust boundaries, assets,
+   attackers, threats with their controls and what is left over, and two new
+   accepted risks (keyring access by software running as you; X11 in Game
+   Mode).
 4. OpenTofu config for the repo settings, with encrypted state.
 
 ### Stage 4 pull requests _(added 2026-11-06)_

@@ -4,9 +4,95 @@ This file explains every security decision in Crossparty, in plain English.
 Code that makes one of these decisions links here with a comment such as
 `docs/security.md#sec-001`.
 
-The full threat model (assets, threats and controls) is written up in
-stage 5. Until then, the Security and threat model section of the project
-plan is the reference.
+The threat model below says what is protected, from whom, and how. Each
+control links to the decision that explains it, and what the controls cannot
+stop is listed plainly under Accepted risks.
+
+## Threat model
+
+_Written in stage 5, 2026-11-06. Reviewed at every release, and whenever a
+Flatpak permission, an allowed host or a new SEC entry is added._
+
+### What Crossparty is
+
+A Flatpak app that shows Microsoft's Xbox web app (play.xbox.com) in a KDE
+window, an overlay above games and a handheld layout. Microsoft's page does
+the party chat; Crossparty decides what that page may load, what it may use,
+and what is kept on disk. It runs no server, has no account of its own and
+sends nothing anywhere except the page's own traffic to Microsoft.
+
+### Trust boundaries
+
+Data crossing these lines is checked; nothing inside a line is trusted to
+check itself.
+
+1. **Party chat to the page.** Other players' text and links arrive inside
+   Microsoft's page. Microsoft is trusted to run its own service; what other
+   players send is not.
+2. **The page to the app.** The page can ask to navigate, open windows, use
+   permissions and write console messages. The C++ core decides every one
+   (SEC-010, SEC-011, SEC-017).
+3. **The app to the desktop.** Flatpak's sandbox, with Chromium's own sandbox
+   inside it (SEC-012). The app reaches the desktop only through the listed
+   Flatpak permissions and portals (SEC-005).
+4. **The app's files to other programs.** Anything on disk can be read by
+   other programs running as you, so sign-in data is only ever on disk
+   encrypted (SEC-009).
+5. **Source to release.** Code, dependencies, CI and the published build
+   (SEC-001 to SEC-004, SEC-020).
+
+### Assets
+
+| Asset | Why it matters |
+|---|---|
+| Microsoft sign-in (cookies and tokens) | Whoever holds them is signed in as you, to Xbox and possibly more of your Microsoft account |
+| Microphone | Live audio from your room |
+| Keystrokes | Passwords and chat typed while Crossparty or a game has focus |
+| The release download | A swapped build runs on every user's machine |
+| The GitHub account, its keys and tokens | Control of the code, settings and future releases |
+
+### Who might attack
+
+| Attacker | What they can do to start with |
+|---|---|
+| Another player in a party | Send text and links that appear in the page |
+| A malicious website | Run its own code, if a link to it ever loads |
+| Someone on the network | See and change unencrypted traffic |
+| Someone with the device | Use the logged-in desktop, or copy files from a lost or shared device |
+| Other software running as you | Read your files and talk to your session's services |
+| A supply chain attacker | Tamper with a dependency, a CI action or a build tool |
+| Someone after the developer's accounts | Phish or steal a GitHub login, key or token |
+
+Microsoft is not in this list: the page is Microsoft's own, and it already
+sees everything said and done in a party. Crossparty cannot hide anything from
+Microsoft and does not try.
+
+### Threats and controls
+
+| Threat | Controls | Left over |
+|---|---|---|
+| A link in party chat leads to a malicious page next to your session and microphone | Exact host allowlist, https only, every other link to your browser, other schemes blocked, downloads refused (SEC-010) | Frames inside Microsoft's pages may load other hosts, with no permissions (SEC-010) |
+| A page uses the camera, screen, location or other browser powers | Only the microphone and notifications, only for allowed hosts; any new permission type refused (SEC-011) | None beyond what Microsoft's own page does with the microphone |
+| The page breaks out of the browser | Chromium's sandbox inside Flatpak's (SEC-012); no native objects exposed to the page; the invite watcher runs in an isolated world and only reports a number (SEC-017) | A Chromium bug fixed in Chrome but not yet in QtWebEngine (RISK-001) |
+| The sign-in is copied from disk | In-memory web profile; cookies saved only with AES-256-GCM, key from KWallet via the Secret portal; tampered files deleted (SEC-009) | Software running as you while KWallet is unlocked can ask for the key (RISK-002) |
+| A lost or shared device keeps the sign-in | Sign out and wipe erases the saved sign-in, cookies and cache, then quits (SEC-018) | The KWallet secret stays, protecting nothing on its own (SEC-018) |
+| The microphone is live without you knowing | Mute silences Crossparty's own recording stream; the muted badge and top bar always show the state; one copy at a time; the app quits rather than run with no window (SEC-007, SEC-013, SEC-014) | The page decides when it records while unmuted, as in any browser |
+| Keystrokes are read by another app | Wayland only on the desktop; the overlay and notices never take the keyboard (SEC-015, SEC-016) | X11 in Steam's Game Mode, shared with games (RISK-003, SEC-019) |
+| Page text in notices is used to trick you | Shown as plain text only, never links or rich text; invite toasts use fixed text (SEC-016, SEC-017) | None |
+| Traffic is read or changed on the network | Allowed hosts are https only (SEC-010); certificate checks are Chromium's own | None beyond Chromium's |
+| A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
+| A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004) | Caught only for formats the scanners know |
+| The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA | Hardware-key 2FA and secret scanning push protection still to do (stage 5 OpenTofu, and stage 0's open item) |
+| A tampered release reaches users | Planned for stage 6: builds only in CI, Flathub's signed repository | Not yet in place: there is no release |
+
+### Out of scope
+
+- Anything Microsoft does with what you say, play or type on its service.
+- A device already fully compromised (root access, or a keylogger in the
+  desktop session).
+- Cheating or anti-cheat systems: Crossparty never reads or changes games.
+- Other Microsoft services reached by your browser through links Crossparty
+  hands to it.
 
 ## Decision log
 
@@ -64,9 +150,10 @@ push protection is added in stage 5 as a second layer.
 is added in the stage that needs it, with a comment giving the reason.
 
 **Why:** Deny by default. A permission that is not granted cannot be abused,
-and a short list is easy to review. There is deliberately no X11 socket: X11
-lets any client read other clients' keystrokes, including games running on
-XWayland.
+and a short list is easy to review. There is deliberately no X11 socket on
+the desktop: X11 lets any client read other clients' keystrokes, including
+games running on XWayland. Steam's Game Mode, which offers nothing but X11, is
+the one exception (SEC-019) _(amended 2026-11-06)_.
 
 **Testing:** The unit tests run headless (`QT_QPA_PLATFORM=offscreen`), so
 even the test sandbox needs no display socket. The CI Flatpak action's
@@ -444,3 +531,20 @@ QtWebEngine is patched through the KDE runtime, which lags Chrome's releases.
 Exposure is limited because only Microsoft's own origins ever load in the app,
 and every other link opens in your default browser. This risk is reviewed at
 each release.
+
+### RISK-002: Software running as you can reach the saved sign-in
+
+The cookie file is encrypted (SEC-009), but its key is in KWallet. Any
+program running as you while KWallet is unlocked could ask the Secret portal
+or KWallet for secrets, as it could for every other keyring entry. Flatpak
+gives each app its own secret, so another Flatpak app cannot ask for
+Crossparty's; an unsandboxed program can. Protecting against software already
+running as you is outside what an app can do, so this is accepted.
+
+### RISK-003: X11 keystrokes are shared in Steam's Game Mode
+
+In Game Mode, Crossparty and the games beside it share Gamescope's X11
+display, so each could read the other's key presses (SEC-019). Signing in on
+the desktop, where Crossparty uses Wayland only, avoids typing the password in
+Game Mode at all. Accepted because handheld mode cannot work without it, and
+the games already share that display with each other.
