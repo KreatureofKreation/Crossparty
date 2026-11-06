@@ -267,10 +267,12 @@ permissions that let it work.
 | `--socket=pulseaudio` | Yes | Mic and speakers (Flatpak has no separate mic switch) |
 | `--share=network` | Yes | Reach Microsoft's servers |
 | `--device=dri` | Yes | GPU acceleration |
+| `--socket=fallback-x11` | Only when no Wayland is running _(added 2026-11-06)_ | Steam's Game Mode offers nothing else (SEC-019) |
+| `--share=ipc` | Yes _(added 2026-11-06)_ | Required with X11 for shared-memory images; Flathub rejects X11 without it (SEC-019) |
 | Tray (StatusNotifier) | Yes | Tray icon |
 | Secret portal | Via portal _(amended 2026-11-05)_ | Key for encrypted cookies; no extra permission needed. Was "Secret Service: Yes" |
 | Notifications, global shortcuts | Via portals | No extra permission needed; user approves in KDE |
-| X11 socket | No | Keystroke-snooping risk |
+| X11 socket on the desktop | No | Keystroke-snooping risk |
 | File system or home folder | No | Not needed |
 | Other devices | No | Not needed |
 
@@ -482,8 +484,10 @@ it is unofficial. (Not legal advice; checked against public guidance only.)
 - **No warranty:** covered by the MIT licence; repeated in plain words in the
   README.
 - **Microsoft's terms:** Crossparty only displays Microsoft's own web app, the
-  same as a browser. It never automates, scrapes or modifies the page, which
-  keeps it on the safe side of their terms.
+  same as a browser. It never automates, clicks, changes or sends anything
+  in the page. The one script it adds only reads the invite count from the
+  page's own button, to show an invite alert, and reports nothing else
+  (SEC-017) _(amended 2026-11-07)_.
 - **Privacy statement:** in the README (see Privacy).
 
 ## Build order
@@ -497,8 +501,19 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 | 2. Window mode | Main window, top bar, system theme; site allowlist, permission handler and keyring-encrypted cookies, with unit tests; mode-ready layout (window, overlay and handheld as separate views over one shared core); all interface text wrapped for translation; settings file carries a version number; tray, close-to-tray, single instance, saved size | Done _(amended 2026-11-06)_ |
 | 3. Overlay and hotkeys | Layer-surface overlay, focus on open, Esc and click-outside dismiss; shortcuts portal for overlay and mute hotkeys; muted badge and invite toasts; mute the microphone itself (our capture stream, not page output) _(amended 2026-11-05)_ | Done _(amended 2026-11-06)_ |
 | 4. Handheld mode | Game Mode detection, full-screen controller layout; tested in nested Gamescope; Sign out and wipe | Done _(amended 2026-11-06)_ |
-| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | Next |
-| 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | |
+| 5. Hardening and CI | CodeQL added to CI; docs/security.md threat model written up; Flatpak manifest finalised (offline build, flatpak-builder-lint clean); OpenTofu config for repo settings, encrypted state | Done _(amended 2026-11-07)_ |
+| 6. Packaging and release | staging → Flathub beta, main → Flathub stable (once public); scheduled checks; README, SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, disclaimer; manual checklist passes; tag v0.1.0 | Next |
+
+### Stage 6 pull requests _(added 2026-11-07)_
+
+1. Docs: README (install, first start, handheld, support, known issues,
+   privacy), CHANGELOG for 0.1.0, the revoke-and-rotate plan in SECURITY.md,
+   CONTRIBUTING's pull-request workflow, and plan corrections.
+2. Weekly scheduled checks in CI that open an issue when something breaks.
+3. Release build: screenshots, version 0.1.0, and a CI job that builds the
+   Flatpak bundle for a tagged release.
+4. Release: the manual checklist on staging, staging merged into main, and
+   v0.1.0 tagged. Flathub submission follows as its own step.
 
 ### Stage 5 pull requests _(added 2026-11-06)_
 
