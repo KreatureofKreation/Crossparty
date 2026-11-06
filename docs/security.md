@@ -83,7 +83,7 @@ Microsoft and does not try.
 | A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
 | A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004); GitHub secret scanning with push protection (SEC-021) | Caught only for formats the scanners know |
 | The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA; rulesets so nothing reaches main or staging without passing checks, and release tags cannot move; admin token made only for each apply (SEC-021) | Hardware-key 2FA still to do (stage 0's open item) |
-| A tampered release reaches users | Planned for stage 6: builds only in CI, Flathub's signed repository | Not yet in place: there is no release |
+| A tampered release reaches users | Built only in CI from a tagged commit on main, from scratch; SHA-256 checksum and signed build provenance; tags cannot move (SEC-021, SEC-023) | Users who skip the checks; Flathub's signed repository once published there |
 
 ### Out of scope
 
@@ -595,6 +595,37 @@ and runs on a throwaway machine. The app always runs with the sandbox on
 `dev/check-updates.sh` was also run against an older runtime version to see
 it fail. `tests/SiteAllowlistTest.cpp` checks that the start page shared by
 the app and the page check is on the allowlist.
+
+### SEC-023: Releases are built only in CI, from main, and signed
+
+**Decision:** Pushing a `v*` tag runs `.github/workflows/release.yml`:
+
+1. A read-only job checks the tag matches the version in CMakeLists.txt, the
+   metainfo and CHANGELOG.md (`dev/release-notes.sh`), then builds the
+   Flatpak bundle from scratch, with no build cache.
+2. A second job checks the tagged commit is on `main`, then publishes the
+   bundle, its SHA-256 checksum and a build provenance attestation as a
+   GitHub release.
+
+**Why:** A release built on a personal machine can only be trusted as far
+as that machine. Built in CI from a tagged commit on `main`, every release
+traces back to reviewed code that passed the checks (SEC-021). The
+attestation is signed with GitHub's short-lived identity for this workflow
+run, so `gh attestation verify` can prove which repository, workflow and
+commit produced the file; the checksum catches a damaged or swapped download.
+No cache, because a cache saved by any branch's build could otherwise feed
+into a release. Release tags cannot be moved or deleted (SEC-021), so a
+version always means the same code.
+
+**Permissions:** only the publishing job can write. It gets `contents:
+write` to create the release, and `id-token: write` and `attestations: write`
+to sign the attestation. It builds nothing: it only checks, downloads the
+bundle the read-only job built, and publishes it. The actions are pinned by
+commit hash (SEC-002).
+
+**Tests:** `dev/release-notes.sh` was run for a ready version, a wrong
+version and a missing CHANGELOG section. The workflow itself first runs on
+the v0.1.0 tag.
 
 ## Accepted risks
 

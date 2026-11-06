@@ -515,8 +515,10 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    CONTRIBUTING's pull-request workflow, and plan corrections.
 2. Weekly scheduled checks in CI that open an issue when something breaks:
    the page signed out, and updates waiting (SEC-022).
-3. Release build: screenshots, version 0.1.0, and a CI job that builds the
-   Flatpak bundle for a tagged release.
+3. Release build: version 0.1.0, and a CI job that builds the Flatpak
+   bundle for a tagged release on main and publishes it with a checksum and
+   a signed build provenance attestation (SEC-023). Screenshots move to the
+   Flathub submission, which is what needs them.
 4. Release: the manual checklist on staging, staging merged into main, and
    v0.1.0 tagged. Flathub submission follows as its own step.
 

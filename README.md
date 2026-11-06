@@ -38,6 +38,21 @@ flatpak install --user crossparty.flatpak
 Flatpak fetches the KDE runtime it needs from Flathub, so Flathub must be set
 up (it is on Bazzite and most desktop distributions).
 
+To check the download first, put `SHA256SUMS` from the same release next to
+it and run:
+
+```bash
+sha256sum --check SHA256SUMS
+```
+
+Each release is built only by this repository's GitHub Actions, and signed
+to prove it. With the [GitHub CLI](https://cli.github.com/) you can check
+that too:
+
+```bash
+gh attestation verify crossparty.flatpak --repo KreatureofKreation/Crossparty
+```
+
 ## First start
 
 1. **Sign in** with your Microsoft account in the Crossparty window. Your
