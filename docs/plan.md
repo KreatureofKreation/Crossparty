@@ -269,6 +269,8 @@ permissions that let it work.
 | `--device=dri` | Yes | GPU acceleration |
 | `--socket=fallback-x11` | Only when no Wayland is running _(added 2026-11-06)_ | Steam's Game Mode offers nothing else (SEC-019) |
 | `--share=ipc` | Yes _(added 2026-11-06)_ | Required with X11 for shared-memory images; Flathub rejects X11 without it (SEC-019) |
+| `--device=input` | Yes _(added 2026-11-07, 0.2.0)_ | Controllers, read only while Crossparty is focused and turned into keys; no `/run/udev`, so the page never sees them (SEC-024, RISK-004) |
+| `/run/udev` | No _(added 2026-11-07)_ | Would let Microsoft's page read controllers even while a game has focus (docs/spike-controller.md) |
 | Tray (StatusNotifier) | Yes | Tray icon |
 | Secret portal | Via portal _(amended 2026-11-05)_ | Key for encrypted cookies; no extra permission needed. Was "Secret Service: Yes" |
 | Notifications, global shortcuts | Via portals | No extra permission needed; user approves in KDE |
@@ -538,7 +540,7 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 
 ### After 0.1.0 _(added 2026-11-07)_
 
-- Native controller support for 0.2.0. The spike is done
+- Native controller support for 0.2.0 _(built 2026-11-07, SEC-024)_. The spike is done
   (docs/spike-controller.md): the page's Gamepad API works, but Chromium
   gives the page controller input even while a game has focus, so it is not
   used. Instead the core reads controllers with SDL3 and, only while
