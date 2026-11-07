@@ -531,7 +531,23 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
    wipe failures, real hotkey hints, page check limits, an early tag check).
 5. Release: CHANGELOG dated, the manual checklist on staging, staging
    merged into main, and v0.1.0 tagged. Flathub submission follows as its
-   own step.
+   own step. The checklist passed on 2026-11-07, except that handheld mode
+   was controller-navigable only with keys: Steam Input's default layouts
+   send gamepad input, which the app does not read. The README's
+   Controller setup section covers it for 0.1.0.
+
+### After 0.1.0 _(added 2026-11-07)_
+
+- Native controller support for 0.2.0: read controllers with SDL so the
+  handheld bar and, if QtWebEngine's Gamepad API works in the Flatpak, the
+  page itself work with Steam's default gamepad layout. Needs
+  `--device=input` (a new SEC entry and accepted risk: input is acted on
+  only while Crossparty has focus, which the permission cannot enforce).
+  Starts with a spike.
+- A "Configure hotkeys…" menu item using the shortcuts portal's
+  ConfigureShortcuts call.
+- Flathub submission with screenshots; remove the two lint exceptions.
+- A test on a real handheld; hardware-key 2FA.
 
 ### Stage 5 pull requests _(added 2026-11-06)_
 
