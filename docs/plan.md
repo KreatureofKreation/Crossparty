@@ -538,12 +538,15 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
 
 ### After 0.1.0 _(added 2026-11-07)_
 
-- Native controller support for 0.2.0: read controllers with SDL so the
-  handheld bar and, if QtWebEngine's Gamepad API works in the Flatpak, the
-  page itself work with Steam's default gamepad layout. Needs
-  `--device=input` (a new SEC entry and accepted risk: input is acted on
-  only while Crossparty has focus, which the permission cannot enforce).
-  Starts with a spike.
+- Native controller support for 0.2.0. The spike is done
+  (docs/spike-controller.md): the page's Gamepad API works, but Chromium
+  gives the page controller input even while a game has focus, so it is not
+  used. Instead the core reads controllers with SDL3 and, only while
+  Crossparty is focused, turns them into arrow keys, Enter and Escape for
+  the handheld bar and the page. Needs `--device=input`, without
+  `/run/udev` (a new SEC entry and accepted risk). Open questions, listed in
+  the spike: Steam's virtual gamepad in Game Mode, focus under Gamescope,
+  and duplicate input when Steam Input also sends keys.
 - A "Configure hotkeys…" menu item using the shortcuts portal's
   ConfigureShortcuts call.
 - Flathub submission with screenshots; remove the two lint exceptions.
