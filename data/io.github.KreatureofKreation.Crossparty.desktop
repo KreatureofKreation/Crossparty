@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Crossparty
+Comment=Unofficial desktop app for Xbox party chat
+Exec=crossparty
+Icon=io.github.KreatureofKreation.Crossparty
+Terminal=false
+Categories=Network;Chat;
+StartupWMClass=io.github.KreatureofKreation.Crossparty

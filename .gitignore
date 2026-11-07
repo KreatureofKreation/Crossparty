@@ -1,6 +1,7 @@
 # Build output
 /build/
 /build-dir/
+/build-dir-spike/
 /repo/
 /.flatpak-builder/
 *.flatpak

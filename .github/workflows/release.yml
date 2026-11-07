@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2026 KreatureofKreation
+# SPDX-License-Identifier: MIT
+#
+# Builds and publishes a release when a v* tag is pushed: the Flatpak bundle,
+# its SHA-256 checksum, and a signed build provenance attestation that shows
+# it was built here, by this workflow, from the tagged commit. Releases are
+# built only in CI, never on a personal machine. See docs/security.md#sec-023.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  # Seconds, before the long uncached build: a tag that is not on main is
+  # refused straight away. The publish job checks again before writing.
+  on-main:
+    name: Check the tag is on main
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  build:
+    name: Build the release bundle
+    needs: on-main
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11@sha256:b0a8a2acb9e420dd0e3e083ff552bea5a817e17e41532f1d2287ff49ef9aae0e
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the tag matches the version, metainfo and CHANGELOG
+        run: dev/release-notes.sh "${GITHUB_REF_NAME#v}"
+
+      # No build cache: a release is built from scratch, so nothing saved by
+      # an earlier branch build can end up in it.
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3  # v6.8
+        with:
+          manifest-path: io.github.KreatureofKreation.Crossparty.yml
+          bundle: crossparty.flatpak
+          cache: false
+
+  publish:
+    name: Publish the release
+    needs: build
+    runs-on: ubuntu-24.04
+    # The only job that can write: creating the release, and signing the
+    # attestation with GitHub's short-lived identity token.
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # Full history, to check the tag is on main.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: crossparty-x86_64.flatpak
+
+      - name: Write the checksum
+        run: sha256sum crossparty.flatpak > SHA256SUMS
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        with:
+          subject-path: crossparty.flatpak
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dev/release-notes.sh "${GITHUB_REF_NAME#v}" > notes.md
+          gh release create "$GITHUB_REF_NAME" crossparty.flatpak SHA256SUMS \
+            --verify-tag \
+            --title "Crossparty ${GITHUB_REF_NAME#v}" \
+            --notes-file notes.md

@@ -1,0 +1,6 @@
+{
+    "io.github.KreatureofKreation.Crossparty": {
+        "metainfo-missing-screenshots": "Screenshots are added in stage 6, once there is a public URL for them and a screenshot that shows no account details (docs/plan.md, Stage 5 pull requests)",
+        "appstream-screenshots-not-mirrored-in-ostree": "Follows from the missing screenshots above; goes with them in stage 6"
+    }
+}

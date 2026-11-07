@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 KreatureofKreation
+SPDX-License-Identifier: CC0-1.0
+-->
+<!-- Describes the app to software centres such as Discover and Flathub. -->
+<component type="desktop-application">
+  <id>io.github.KreatureofKreation.Crossparty</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>Crossparty</name>
+  <summary>Unofficial desktop app for Xbox party chat</summary>
+  <developer id="io.github.kreatureofkreation">
+    <name>KreatureofKreation</name>
+  </developer>
+
+  <description>
+    <p>
+      Crossparty puts Xbox party chat from the web in its own desktop window,
+      with an overlay you can open over your games and a full-screen layout for
+      handhelds in Steam's Game Mode.
+    </p>
+    <ul>
+      <li>Mute your microphone with a hotkey, with a badge while you are muted</li>
+      <li>A small alert when a party invite arrives while you are in a game</li>
+      <li>Only Microsoft's own sites load inside the app; every other link opens in your browser</li>
+      <li>Your sign-in is stored encrypted, and one action signs out and erases it</li>
+      <li>No telemetry, analytics or crash reporting</li>
+    </ul>
+    <p>
+      Crossparty is an unofficial project and is not affiliated with, endorsed
+      by, or sponsored by Microsoft. Xbox is a trademark of Microsoft
+      Corporation.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.KreatureofKreation.Crossparty.desktop</launchable>
+
+  <url type="homepage">https://github.com/KreatureofKreation/Crossparty</url>
+  <url type="bugtracker">https://github.com/KreatureofKreation/Crossparty/issues</url>
+  <url type="vcs-browser">https://github.com/KreatureofKreation/Crossparty</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#a7d1c2</color>
+    <color type="primary" scheme_preference="dark">#2f5a4c</color>
+  </branding>
+
+  <!-- Party chat is voice and text with other players, moderated by
+       Microsoft's reporting tools. -->
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-chat">moderate</content_attribute>
+    <content_attribute id="social-audio">moderate</content_attribute>
+  </content_rating>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+    <control>gamepad</control>
+  </supports>
+
+  <releases>
+    <!-- The date is set to the release day when the tag is made. -->
+    <release version="0.1.0" date="2026-11-07" type="stable">
+      <description>
+        <p>The first release: party chat in a KDE window, a mute hotkey with a
+        muted badge, an overlay above games, invite alerts, a handheld mode
+        for Steam's Game Mode, and Sign out and wipe.</p>
+      </description>
+    </release>
+  </releases>
+</component>

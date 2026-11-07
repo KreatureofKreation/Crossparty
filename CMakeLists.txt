@@ -3,12 +3,12 @@
 
 cmake_minimum_required(VERSION 3.25)
 
-project(Crosstalk VERSION 0.0.1 LANGUAGES CXX)
+project(Crossparty VERSION 0.1.0 LANGUAGES CXX)
 
 # The one place the application ID is written down. Everything else (the
 # desktop file name, the Wayland app ID, settings paths, keyring entries)
 # is derived from it, so it must never change once anyone has installed the app.
-set(CROSSTALK_APP_ID "io.github.KreatureofKreation.Crosstalk")
+set(CROSSPARTY_APP_ID "io.github.KreatureofKreation.Crossparty")
 
 set(QT_MIN_VERSION "6.8")
 set(KF_MIN_VERSION "6.0")
@@ -23,7 +23,12 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMAddTests)
 
-find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Test)
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus Gui Network Qml Quick QuickControls2 Test WebEngineCore WebEngineQuick Widgets)
+# Encryption for the saved cookies (docs/security.md#sec-009).
+find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
+# Muting our own microphone stream (docs/security.md#sec-014).
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Pulse REQUIRED IMPORTED_TARGET libpulse libpulse-mainloop-glib)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_MIN_VERSION})
@@ -37,4 +42,13 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
-install(FILES data/${CROSSTALK_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+# The weekly page check needs the network, so it is built only when asked
+# for: by dev/lint.sh, so it is linted, and by the scheduled checks in CI.
+option(CROSSPARTY_BUILD_PAGE_CHECK "Build tools/PageCheck, the weekly check of Microsoft's page" OFF)
+if(CROSSPARTY_BUILD_PAGE_CHECK)
+    add_subdirectory(tools)
+endif()
+
+install(FILES data/${CROSSPARTY_APP_ID}.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES data/${CROSSPARTY_APP_ID}.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+install(FILES data/icons/${CROSSPARTY_APP_ID}.svg DESTINATION ${KDE_INSTALL_FULL_ICONDIR}/hicolor/scalable/apps)
