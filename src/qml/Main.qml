@@ -78,6 +78,20 @@ Kirigami.ApplicationWindow {
         }
     }
 
+    // A controller's Menu button (GamepadInput): in handheld mode, moves
+    // between the page and the handheld bar. The page keeps the arrow keys
+    // for itself, so there is no other way to reach the bar's buttons.
+    function toggleControlsFocus() {
+        if (!handheld || signOutDialog.opened || wipeFailedDialog.opened) {
+            return;
+        }
+        if (handheldBar.controlsFocused) {
+            partyPage.forceActiveFocus();
+        } else {
+            handheldBar.focusControls();
+        }
+    }
+
     onActiveChanged: {
         if (active) {
             focusPageIfNothingElse();
@@ -177,6 +191,8 @@ Kirigami.ApplicationWindow {
         }
 
         HandheldBar {
+            id: handheldBar
+
             Layout.fillWidth: true
             visible: mainWindow.handheld
             onSignOutRequested: signOutDialog.open()

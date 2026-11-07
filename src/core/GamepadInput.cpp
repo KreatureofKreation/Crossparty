@@ -42,6 +42,7 @@ std::optional<GamepadNavigator::Button> buttonFor(Uint8 button)
         return GamepadNavigator::Button::Back;
     default:
         // Everything else, including the Guide button, which stays Steam's.
+        // Menu (Start) is handled separately in poll().
         return std::nullopt;
     }
 }
@@ -135,6 +136,12 @@ void GamepadInput::poll()
             m_navigator.reset();
             break;
         case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+            if (active && event.gbutton.button == SDL_GAMEPAD_BUTTON_START) {
+                // Menu (≡): between the page and Crossparty's own buttons
+                // (Main.qml). Not a key, because the page would take it.
+                QMetaObject::invokeMethod(QGuiApplication::focusWindow(), "toggleControlsFocus");
+                break;
+            }
             if (const auto button = buttonFor(event.gbutton.button); button && active) {
                 sendKeys(m_navigator.press(*button, now));
             }

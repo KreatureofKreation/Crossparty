@@ -655,11 +655,14 @@ runtime, and turns them into the keys its interface and Microsoft's page
 already understand: the D-pad and left stick become arrow keys, A becomes
 Enter, and B becomes Escape, except on Microsoft's page, which has no key
 for "back": there B goes back in the page's history, like a browser's Back
-button. It reads controllers only while Crossparty is
+button. In handheld mode, Menu (≡) moves focus between the page and
+Crossparty's own Mute and Sign Out bar, because the page keeps the arrow
+keys for itself; it is a call into Crossparty's interface, never a key the
+page sees. It reads controllers only while Crossparty is
 the active app. When another app comes to the front, it stops reading; when
 Crossparty comes back, everything pressed meanwhile is read and thrown away
-before anything is sent. The Guide button and every other button are
-ignored. Controller names are logged when they connect; presses never are.
+before anything is sent. The Guide button and every button not named here
+are ignored. Controller names are logged when they connect; presses never are.
 
 **Why:** Steam Input's usual layout for a non-Steam app sends gamepad input,
 which Crossparty did not read, so handheld mode needed manual remapping
@@ -693,8 +696,10 @@ also covers a mouse's Back button.
 
 **Tests:** `tests/GamepadNavigatorTest.cpp` (which keys each button and
 stick position becomes, repeating, letting go, and forgetting held
-directions when focus is lost). Checked by hand: the D-pad, stick, A and B
-drive the page and the handheld bar; B steps back through the page to its
+directions when focus is lost). Checked by hand, on the desktop and in
+nested Gamescope: the D-pad, stick, A and B drive the page and the
+handheld bar; Menu moves between them, and B closes the sign-out dialog;
+B steps back through the page to its
 start without a reload; presses made with another window focused, and with
 Crossparty minimised, did nothing.
 

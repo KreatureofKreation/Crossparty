@@ -9,6 +9,8 @@ versioning: patch for fixes, minor for features, major for breaking changes.
   selects and B goes back, on Crossparty's buttons and on the Xbox page,
   only while Crossparty is the app in front. Microsoft's page never sees
   the controller.
+- **Menu (≡) reaches the handheld bar:** in handheld mode it jumps
+  between the Xbox page and Mute and Sign Out, and back.
 - **Keys go straight to the page:** no need to tab into it first.
 - **Back never drops the party:** going back (B, or a mouse's Back button)
   only steps through the Xbox app's own pages, and never reloads it.

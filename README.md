@@ -76,7 +76,8 @@ running.
 - **Sign in on the desktop first.** In Game Mode, apps share an X11 display,
   so typing your password there is less private (see Known issues).
 - **Controller:** works straight away: the D-pad or left stick moves, A
-  selects and B goes back, on Crossparty's bar and on the Xbox page. See
+  selects and B goes back, on the Xbox page and on Crossparty's bar. Press
+  Menu (≡) to jump to the bar (Mute, Sign Out) and back. See
   [Controllers](#controllers).
 - There is no overlay, muted badge or invite alert in Game Mode: Gamescope
   has no layer above games for them.
@@ -85,7 +86,8 @@ running.
 
 A controller works in Crossparty with no setup: the D-pad or left stick
 moves, A selects and B goes back, on Crossparty's own buttons and on the
-Xbox page. Going back never reloads the page, so a party carries on. Crossparty only listens while it is the app in front; anything
+Xbox page. In handheld mode, Menu (≡) jumps between the page and
+Crossparty's bar. Going back never reloads the page, so a party carries on. Crossparty only listens while it is the app in front; anything
 you press in a game is never sent to the party, and Microsoft's page never
 sees your controller.
 
