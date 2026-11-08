@@ -3,8 +3,10 @@
 #
 # Builds and publishes a release when a v* tag is pushed: the Flatpak bundle,
 # its SHA-256 checksum, and a signed build provenance attestation that shows
-# it was built here, by this workflow, from the tagged commit. Releases are
-# built only in CI, never on a personal machine. See docs/security.md#sec-023.
+# it was built here, by this workflow, from the tagged commit. Then the same
+# bundle goes into Crossparty's GPG-signed Flatpak repository on GitHub Pages,
+# where installed copies update from. Releases are built only in CI, never on
+# a personal machine. See docs/security.md#sec-023 and #sec-025.
 
 name: Release
 
@@ -95,3 +97,63 @@ jobs:
             --verify-tag \
             --title "Crossparty ${GITHUB_REF_NAME#v}" \
             --notes-file notes.md
+
+  repository:
+    name: Sign the Flatpak repository
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11@sha256:b0a8a2acb9e420dd0e3e083ff552bea5a817e17e41532f1d2287ff49ef9aae0e
+      options: --privileged
+    # The signing key is an environment secret: only a job in this
+    # environment can read it, and the environment accepts only v* tags,
+    # which only the owner can push and which cannot move (SEC-021).
+    environment: release-signing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: crossparty-x86_64.flatpak
+
+      # The repository gets exactly the bundle just published and attested.
+      - name: Check the bundle is the published one
+        run: |
+          curl --fail --silent --show-error --location \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/SHA256SUMS" \
+            > SHA256SUMS
+          sha256sum --check SHA256SUMS
+
+      - name: Build and sign the repository
+        env:
+          FLATPAK_SIGNING_KEY: ${{ secrets.FLATPAK_SIGNING_KEY }}
+        run: dev/flatpak-repo.sh crossparty.flatpak site
+
+      # As a user's Flatpak would: refused unless every signature checks out
+      # against the key the .flatpakrepo file carries.
+      - name: Check the repository installs, signed
+        run: dev/flatpak-repo-verify.sh site
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
+        with:
+          path: site
+
+  pages:
+    name: Publish the Flatpak repository
+    needs: repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Only this job can change the site, with GitHub's short-lived identity
+    # token. The github-pages environment also accepts only v* tags.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1

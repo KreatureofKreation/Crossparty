@@ -3,6 +3,14 @@
 Every release is listed here in plain English. Versions follow semantic
 versioning: patch for fixes, minor for features, major for breaking changes.
 
+## Unreleased (0.2.1)
+
+- **Updates at last:** Crossparty now has its own signed Flatpak
+  repository. Install it from the `.flatpakref` in the README and it
+  updates like your other apps. If you installed a downloaded file before,
+  uninstall it and install again from the repository; your sign-in and
+  settings are kept.
+
 ## 0.2.0 - 2026-11-08
 
 - **Controllers work with no setup:** the D-pad or left stick moves, A

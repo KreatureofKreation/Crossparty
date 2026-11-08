@@ -8,7 +8,7 @@ layout for handhelds in Steam's Game Mode. Microsoft's own web app does the
 party chat; Crossparty decides what it may load, what it may use and what is
 kept on your machine.
 
-**Status:** 0.2.0, from [Releases](https://github.com/KreatureofKreation/Crossparty/releases). Not on Flathub yet.
+**Status:** 0.2.0. Installs and updates from its own signed Flatpak repository ([Install](#install)).
 
 ## What it does
 
@@ -27,16 +27,43 @@ kept on your machine.
 
 ## Install
 
-Crossparty is a Flatpak. Until it is on Flathub, install the
-`crossparty.flatpak` file from the latest
-[release](https://github.com/KreatureofKreation/Crossparty/releases):
+Crossparty is a Flatpak, from its own signed repository. Install it with:
+
+```bash
+flatpak install --user https://kreatureofkreation.github.io/Crossparty/crossparty.flatpakref
+```
+
+That adds the repository and installs the app. From then on Crossparty
+updates with your other Flatpaks, in Discover or with `flatpak update`.
+Flatpak fetches the KDE runtime it needs from Flathub, so Flathub must be set
+up (it is on Bazzite and most desktop distributions). Crossparty is not on
+Flathub itself: Flathub's rules bar packaging written with AI tools, and
+Crossparty is written with Claude (see
+[docs/security.md](docs/security.md#sec-025)).
+
+Every update is signed. Flatpak refuses one that is not signed by the
+release key, fingerprint shown on the
+[repository page](https://kreatureofkreation.github.io/Crossparty/) and kept
+in [data/release-signing.asc](data/release-signing.asc). Only this
+repository's release workflow can use the key.
+
+**Installed 0.1.0 or 0.2.0 from a downloaded file?** Those never update.
+Remove it first (your sign-in and settings are kept), then install as
+above:
+
+```bash
+flatpak uninstall --user io.github.KreatureofKreation.Crossparty
+```
+
+### Or a single file
+
+Each [release](https://github.com/KreatureofKreation/Crossparty/releases) also
+has `crossparty.flatpak`, which installs without the repository but never
+updates:
 
 ```bash
 flatpak install --user crossparty.flatpak
 ```
-
-Flatpak fetches the KDE runtime it needs from Flathub, so Flathub must be set
-up (it is on Bazzite and most desktop distributions).
 
 To check the download first, put `SHA256SUMS` from the same release next to
 it and run:
