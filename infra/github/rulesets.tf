@@ -18,6 +18,19 @@ locals {
 # main and staging change only through pull requests whose checks have
 # passed: no direct pushes, no force pushes, no deletion. Nobody bypasses
 # this, including the owner (plan: Workflow).
+# Both rulesets already exist on GitHub, so a fresh state adopts them by ID
+# (Settings, Rules) instead of making duplicates. Once in the state these do
+# nothing (README.md here, "The state file").
+import {
+  to = github_repository_ruleset.protected_branches
+  id = "Crossparty:26694210"
+}
+
+import {
+  to = github_repository_ruleset.release_tags
+  id = "Crossparty:26694209"
+}
+
 resource "github_repository_ruleset" "protected_branches" {
   name        = "Protect main and staging"
   repository  = github_repository.crossparty.name
