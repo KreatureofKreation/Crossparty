@@ -8,7 +8,7 @@ layout for handhelds in Steam's Game Mode. Microsoft's own web app does the
 party chat; Crossparty decides what it may load, what it may use and what is
 kept on your machine.
 
-**Status:** first release (0.1.0) in preparation. Not on Flathub yet.
+**Status:** 0.2.0, from [Releases](https://github.com/KreatureofKreation/Crossparty/releases). Not on Flathub yet.
 
 ## What it does
 

@@ -3,7 +3,7 @@
 Every release is listed here in plain English. Versions follow semantic
 versioning: patch for fixes, minor for features, major for breaking changes.
 
-## Unreleased (0.2.0)
+## 0.2.0 - 2026-11-08
 
 - **Controllers work with no setup:** the D-pad or left stick moves, A
   selects and B goes back, on Crossparty's buttons and on the Xbox page,
