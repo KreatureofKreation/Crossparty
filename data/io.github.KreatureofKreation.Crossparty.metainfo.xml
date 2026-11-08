@@ -62,6 +62,14 @@ SPDX-License-Identifier: CC0-1.0
 
   <releases>
     <!-- The date is set to the release day when the tag is made. -->
+    <release version="0.2.1" date="2026-11-08" type="stable">
+      <description>
+        <p>Crossparty now has its own signed Flatpak repository, so installed
+        copies update like any other app. If you installed a downloaded file
+        before, uninstall it and install again from the repository; your
+        sign-in and settings are kept.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-11-08" type="stable">
       <description>
         <p>Controllers work with no setup: the D-pad or left stick moves, A

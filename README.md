@@ -8,7 +8,7 @@ layout for handhelds in Steam's Game Mode. Microsoft's own web app does the
 party chat; Crossparty decides what it may load, what it may use and what is
 kept on your machine.
 
-**Status:** 0.2.0. Installs and updates from its own signed Flatpak repository ([Install](#install)).
+**Status:** 0.2.1. Installs and updates from its own signed Flatpak repository ([Install](#install)).
 
 ## What it does
 

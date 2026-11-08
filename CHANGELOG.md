@@ -3,7 +3,7 @@
 Every release is listed here in plain English. Versions follow semantic
 versioning: patch for fixes, minor for features, major for breaking changes.
 
-## Unreleased (0.2.1)
+## 0.2.1 - 2026-11-08
 
 - **Updates at last:** Crossparty now has its own signed Flatpak
   repository. Install it from the `.flatpakref` in the README and it
