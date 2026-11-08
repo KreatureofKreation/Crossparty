@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.25)
 
-project(Crossparty VERSION 0.2.0 LANGUAGES CXX)
+project(Crossparty VERSION 0.2.1 LANGUAGES CXX)
 
 # The one place the application ID is written down. Everything else (the
 # desktop file name, the Wayland app ID, settings paths, keyring entries)
