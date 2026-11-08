@@ -84,7 +84,7 @@ Microsoft and does not try.
 | A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
 | A secret is committed | gitleaks and private-key checks on every commit, and on the whole history in CI (SEC-004); GitHub secret scanning with push protection (SEC-021) | Caught only for formats the scanners know |
 | The developer's GitHub account is taken over | Dedicated passphrase-protected SSH key (SEC-008); 2FA; rulesets so nothing reaches main or staging without passing checks, and release tags cannot move; admin token made only for each apply (SEC-021) | Hardware-key 2FA still to do (stage 0's open item) |
-| A tampered release reaches users | Built only in CI from a tagged commit on main, from scratch; SHA-256 checksum and signed build provenance; tags cannot move (SEC-021, SEC-023) | Users who skip the checks; Flathub's signed repository once published there |
+| A tampered release reaches users | Built only in CI from a tagged commit on main, from scratch; SHA-256 checksum and signed build provenance; tags cannot move (SEC-021, SEC-023); updates only from a GPG-signed repository whose key is used only by tag-only CI jobs (SEC-025) | Users who install a bundle and skip the checks; a stolen signing key, until it is rotated (SECURITY.md) |
 
 ### Out of scope
 
@@ -702,6 +702,71 @@ handheld bar; Menu moves between them, and B closes the sign-out dialog;
 B steps back through the page to its
 start without a reload; presses made with another window focused, and with
 Crossparty minimised, did nothing.
+
+### SEC-025: Updates come from Crossparty's own signed Flatpak repository
+
+**Decision:** After each release is published (SEC-023), two more jobs in
+`.github/workflows/release.yml` put the same bundle into a Flatpak
+repository on GitHub Pages, at
+`https://kreatureofkreation.github.io/Crossparty/`:
+
+1. A read-only job in the `release-signing` environment checks the bundle
+   matches the release's published checksum, imports it into a new
+   repository, and signs the commit and the repository summary with the
+   project's GPG key (`dev/flatpak-repo.sh`). It then adds the repository to
+   a throwaway Flatpak installation from the generated `.flatpakrepo` file,
+   exactly as a user would, and installs the app from it
+   (`dev/flatpak-repo-verify.sh`). Only then is the site uploaded.
+2. A job in the `github-pages` environment, which can do nothing but
+   deploy, publishes it.
+
+Users add the repository once from `crossparty.flatpakref`; after that,
+Discover and `flatpak update` update Crossparty like any other app, and
+Flatpak refuses any update not signed by the key in that file.
+
+**Why:** Flathub was the plan, but its Generative AI policy, from May 2026,
+bars AI-written manifests outright and lets reviewers reject AI-written
+code; Crossparty is written with Claude, and says so in its commits, so it
+is not submitted there. This is the plan's fallback. A downloaded bundle
+never updates, so without a repository every user stays on whatever version
+they first installed, security fixes included. Signing means a user's
+Flatpak trusts the key, not the web host: whoever serves the files, an
+update that this workflow did not sign is refused.
+
+**The key:** an Ed25519 GPG key made only for this, with no passphrase
+(CI has to use it unattended) and no expiry (an expired key would stop
+every update with no way to tell users). Its public half is
+`data/release-signing.asc`, also served on the site and carried inside
+both Flatpak files. Its secret half is only in the `release-signing`
+environment's `FLATPAK_SIGNING_KEY` secret and in an offline backup with its
+revocation certificate; it was made on the developer's machine in a
+throwaway GnuPG home that was deleted afterwards (infra/github/README.md).
+The secret was added in GitHub's web interface, so it never went through
+OpenTofu or its state. Rotating it is in SECURITY.md.
+
+**Permissions:** both environments accept only jobs running for a `v*` tag
+(infra/github/environments.tf). Only the owner can push tags, tags cannot
+move (SEC-021), and the workflow refuses a tag not on `main` (SEC-023), so
+no branch, pull request or fork can read the key or change the site. The
+signing job has the read-only token; it gets the secret only as an
+environment variable, imports it into a GnuPG home that is deleted when the
+script ends, and signs with the fingerprint of the committed public key,
+so a wrong secret fails instead of signing. The deploy job gets only
+`pages: write` and `id-token: write`. Pages is set to deploy from the
+workflow only, never from a branch. The actions are pinned by commit hash
+(SEC-002).
+
+**Fail safe:** each repository holds only the newest release, so nothing
+old can be served; installed copies fetch only the files that changed.
+Anything wrong (checksum, signing, the install check) stops the job before
+the site changes, and the previous release stays published. The site is on
+github.io, which GitHub serves over HTTPS only.
+
+**Tests:** `dev/flatpak-repo-test.sh`, with throwaway keys, on the v0.2.0
+bundle: the repository builds and installs from its `.flatpakrepo` into a
+throwaway installation; a secret key that is not the published key is
+refused; and Flatpak refuses a repository signed by a key it does not
+trust. The workflow itself first runs on the next release tag.
 
 ## Accepted risks
 

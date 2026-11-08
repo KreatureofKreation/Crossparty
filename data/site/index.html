@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 KreatureofKreation -->
+<!-- SPDX-License-Identifier: MIT -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crossparty Flatpak repository</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    pre { overflow-x: auto; padding: 0.75rem; border: 1px solid #8884; border-radius: 6px; }
+    code { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Crossparty</h1>
+  <p>An unofficial Linux app for Xbox party chat. This is its own Flatpak
+  repository, signed by the release workflow on GitHub. Not affiliated with,
+  endorsed by, or sponsored by Microsoft.</p>
+
+  <h2>Install</h2>
+  <pre><code>flatpak install --user @SITE_URL@/crossparty.flatpakref</code></pre>
+  <p>Updates then come with every other Flatpak, from Discover or
+  <code>flatpak update</code>.</p>
+
+  <h2>Signing key</h2>
+  <p>Every release is signed with <a href="release-signing.asc">this key</a>,
+  fingerprint <code>@FINGERPRINT@</code>. It is also in the
+  <a href="https://github.com/KreatureofKreation/Crossparty">source repository</a>,
+  in <code>data/release-signing.asc</code>.</p>
+</body>
+</html>

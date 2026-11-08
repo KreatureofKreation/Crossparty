@@ -66,3 +66,11 @@ resource "github_repository_dependabot_security_updates" "crossparty" {
 
   depends_on = [github_repository_vulnerability_alerts.crossparty]
 }
+
+# GitHub Pages serves the signed Flatpak repository. Only the release workflow
+# publishes it; nothing is built from a branch (SEC-025). With no custom
+# domain it is on github.io, which GitHub serves over HTTPS only.
+resource "github_repository_pages" "crossparty" {
+  repository = github_repository.crossparty.name
+  build_type = "workflow"
+}

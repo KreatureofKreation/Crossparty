@@ -18,7 +18,7 @@ what to do if one is lost, stolen or might have been seen.
 | SSH key `id_ed25519_github` | The development PC, passphrase protected | Pushing branches (docs/security.md#sec-008) |
 | OpenTofu admin token | Made for one apply and deleted the same day | Repository settings and rulesets (docs/security.md#sec-021) |
 | OpenTofu state passphrase | Password manager | Reading the encrypted state file only |
-| Flathub's signing key | Flathub, once published there | The published app; not held by this project |
+| Release signing key (GPG, Ed25519) | GitHub's `release-signing` environment secret; an offline backup with its revocation certificate | Which updates installed copies accept (docs/security.md#sec-025) |
 
 ### First, for any of them
 
@@ -62,9 +62,32 @@ The state file holds settings and IDs, not secrets. If the passphrase is lost
 or seen, delete `infra/github/terraform.tfstate`, choose a new passphrase,
 and re-import (infra/github/README.md). Nothing on GitHub changes.
 
+### Release signing key
+
+A stolen key alone cannot reach users: updates come only from this
+repository's GitHub Pages site, which only the release workflow can change.
+With the key and the site, though, someone could ship an update every
+installed copy accepts, so treat it as urgent.
+
+1. Settings, Environments, `release-signing`: delete `FLATPAK_SIGNING_KEY`.
+   No release can be signed until a new one is added.
+2. Make a new key as in infra/github/README.md, replace
+   `data/release-signing.asc` through a pull request, and add the new secret.
+3. Publish a new release. Installed copies still trust only the old key, so
+   they refuse it: the security advisory (step 4 above) tells users to
+   remove the repository and add it again, with:
+   `flatpak remote-delete --user crossparty` and the install command in the
+   README. Their sign-in and settings are kept.
+4. Keep the old key's revocation certificate with the advisory, for anyone
+   who imported the key into GnuPG.
+
+If the key is only lost (no backup) and not stolen, the steps are the same
+without the urgency.
+
 ### A tampered release
 
 1. Delete the affected release's downloads from GitHub. The tag cannot be
    moved (docs/security.md#sec-021).
 2. Publish the advisory (step 4 above) and a new version built by CI.
-3. If it was on Flathub, contact Flathub's admins as well.
+3. If it reached the Flatpak repository, redeploy the site from the clean
+   release, and if the signing key could be involved, rotate it (above).

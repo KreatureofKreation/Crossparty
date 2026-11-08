@@ -37,7 +37,7 @@ plan is recorded here before it is built.
 | Fallback toolkit | Electron | Used only if party voice fails in QtWebEngine. Not needed: voice passed in the spike _(amended 2026-11-05)_ |
 | Display | Native Wayland, no X11 | X11 apps can read other apps' keystrokes, including games on XWayland |
 | Packaging | Flatpak from day one | Outer sandbox, clear permissions, native on Bazzite |
-| Distribution | Flathub stable + beta; signed own repo as fallback | Verified updates and permission review |
+| Distribution | Own GPG-signed Flatpak repo on GitHub Pages, from tagged releases _(amended 2026-11-08)_ | Verified updates. Flathub was the plan, but its Generative AI policy (May 2026) bars AI-written manifests and lets reviewers reject AI-written code, so the fallback became the plan. See SEC-025 |
 | IaC tool | OpenTofu | Same language as Terraform, open licence, encrypted state built in |
 | Dev environment | Distrobox container defined in the repo | Keeps tools off the immutable host; reproducible |
 | Overlay | Hidden until summoned, top-right, opens with focus | Used for invites, audio, achievements, then dismissed |
@@ -280,10 +280,11 @@ permissions that let it work.
 
 ### Channels
 
-- Flathub stable: built from tagged releases on main.
-- Flathub beta: built from staging, for testing before promotion.
-- Fallback if Flathub rejects it: our own Flatpak repo on GitHub Pages,
-  GPG-signed, built by CI.
+- Stable: our own Flatpak repo on GitHub Pages, GPG-signed, built by CI
+  from tagged releases on main (SEC-025) _(amended 2026-11-08)_.
+- No beta channel: staging builds are installed locally from CI.
+- ~~Flathub stable and beta~~: not submitted, because of Flathub's
+  Generative AI policy _(amended 2026-11-08)_.
 
 ### Flathub readiness
 
@@ -382,11 +383,11 @@ and scheduled checks catch breakage before users report it.
 
 1. All work and all automated updates (Dependabot, runtime bumps) land on
    staging.
-2. staging builds are installed locally from CI (Flathub beta once public);
+2. staging builds are installed locally from CI;
    test them on the PC and, where possible, a handheld.
 3. When the manual checklist passes, merge staging into main and tag a release.
-4. Tagged releases on main become your installed version (Flathub stable once
-   public).
+4. Tagged releases on main become your installed version, from the signed
+   repository _(amended 2026-11-08)_.
 5. A broken stable release is fixed by reverting on staging and re-promoting,
    never by editing main directly.
 
@@ -556,7 +557,12 @@ Seven stages; the spike in stage 1 decided that the rest is built on Qt.
   README.
 - A "Configure hotkeys…" menu item using the shortcuts portal's
   ConfigureShortcuts call.
-- Flathub submission with screenshots; remove the two lint exceptions.
+- ~~Flathub submission with screenshots; remove the two lint exceptions.~~
+  Not submitted _(amended 2026-11-08)_: Flathub's Generative AI policy bars
+  AI-written manifests and AI-written submissions. Instead, the release
+  workflow publishes a GPG-signed Flatpak repository on GitHub Pages
+  (SEC-025), first with 0.2.1. The lint exceptions stay; screenshots would
+  still help the README.
 - A test on a real handheld; hardware-key 2FA.
 
 ### Stage 5 pull requests _(added 2026-11-06)_
@@ -617,7 +623,7 @@ answered it before any real build. _(amended 2026-11-05)_
 |---|---|---|
 | Party chat blocked or broken in QtWebEngine | Low; worked in the spike _(amended 2026-11-05)_ | Switch to Electron |
 | Microsoft redesigns the page | High over time | Scheduled checks, staging, small fixes |
-| Flathub rejects an unofficial wrapper | Medium | GPG-signed repo on GitHub Pages |
+| ~~Flathub rejects an unofficial wrapper~~ | Happened another way: its Generative AI policy rules the project out _(amended 2026-11-08)_ | GPG-signed repo on GitHub Pages (SEC-025) |
 | ~~"Crosstalk" is a registered trademark in software or telecoms~~ | Happened; renamed to Crossparty _(amended 2026-11-04)_ | |
 | QtWebEngine security fixes lag Chrome | Certain | Origin allowlist limits exposure; documented accepted risk |
 | Overlay on top or shortcuts portal misbehave | Low; both worked in the spike _(amended 2026-11-05)_ | KWin rule, tray control, documented KDE shortcut |
