@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 KreatureofKreation
 // SPDX-License-Identifier: MIT
 
+#include "GamepadInput.h"
 #include "SingleInstance.h"
 
 #include <QApplication>
@@ -66,6 +67,10 @@ int main(int argc, char *argv[])
         Qt::QueuedConnection);
 
     engine.loadFromModule(u"Crossparty", u"Main");
+
+    // A controller drives Crossparty while it is focused, with no Steam
+    // Input setup. See docs/security.md#sec-024.
+    const GamepadInput gamepadInput;
 
     // Opening Crossparty again, or activating it from the desktop, shows the
     // window, even when it is hidden in the tray.

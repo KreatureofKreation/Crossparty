@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.25)
 
-project(Crossparty VERSION 0.1.0 LANGUAGES CXX)
+project(Crossparty VERSION 0.2.0 LANGUAGES CXX)
 
 # The one place the application ID is written down. Everything else (the
 # desktop file name, the Wayland app ID, settings paths, keyring entries)
@@ -29,6 +29,8 @@ find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
 # Muting our own microphone stream (docs/security.md#sec-014).
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(Pulse REQUIRED IMPORTED_TARGET libpulse libpulse-mainloop-glib)
+# Reading controllers, only while Crossparty is focused (docs/security.md#sec-024).
+pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 find_package(KF6Kirigami ${KF_MIN_VERSION} REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_MIN_VERSION})

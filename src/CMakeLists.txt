@@ -10,6 +10,8 @@ add_library(crossparty_core STATIC
     core/CookieFormat.h
     core/CookieVault.cpp
     core/CookieVault.h
+    core/GamepadNavigator.cpp
+    core/GamepadNavigator.h
     core/GameModeDetection.cpp
     core/GameModeDetection.h
     core/InviteWatch.cpp
@@ -54,7 +56,7 @@ target_link_libraries(crossparty_ui PUBLIC
     PkgConfig::Pulse
 )
 
-qt_add_executable(crossparty main.cpp core/SingleInstance.cpp core/SingleInstance.h)
+qt_add_executable(crossparty main.cpp core/GamepadInput.cpp core/GamepadInput.h core/SingleInstance.cpp core/SingleInstance.h)
 
 target_compile_definitions(crossparty PRIVATE
     CROSSPARTY_APP_ID="${CROSSPARTY_APP_ID}"
@@ -67,6 +69,7 @@ target_link_libraries(crossparty PRIVATE
     Qt6::DBus
     Qt6::QuickControls2
     Qt6::Widgets
+    PkgConfig::SDL3
 )
 
 # Qt is a shared library here (Fedora and the KDE Flatpak runtime), so QML

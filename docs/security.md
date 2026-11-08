@@ -78,6 +78,7 @@ Microsoft and does not try.
 | A lost or shared device keeps the sign-in | Sign out and wipe erases the saved sign-in, cookies and cache, then quits (SEC-018) | The KWallet secret stays, protecting nothing on its own (SEC-018) |
 | The microphone is live without you knowing | Mute silences Crossparty's own recording stream; the muted badge and top bar always show the state; one copy at a time; the app quits rather than run with no window (SEC-007, SEC-013, SEC-014) | The page decides when it records while unmuted, as in any browser |
 | Keystrokes are read by another app | Wayland only on the desktop; the overlay and notices never take the keyboard (SEC-015, SEC-016) | X11 in Steam's Game Mode, shared with games (RISK-003, SEC-019) |
+| Controller presses in a game reach the party, or Microsoft sees them | Controllers are read only while Crossparty is the active app, presses made elsewhere are thrown away, and only arrow keys, Enter and Escape are sent; Chromium has no /run/udev, so the page never sees a controller (SEC-024) | The permission itself could read keyboards and mice; only Crossparty's code keeps to controllers and to focus (RISK-004) |
 | Page text in notices is used to trick you | Shown as plain text only, never links or rich text; invite toasts use fixed text (SEC-016, SEC-017) | None |
 | Traffic is read or changed on the network | Allowed hosts are https only (SEC-010); certificate checks are Chromium's own | None beyond Chromium's |
 | A tampered dependency or CI step | Dev tools from Fedora's signed packages in a container (SEC-001); actions and images pinned by hash, read-only CI token (SEC-002, SEC-003); pinned Flatpak sources and an offline build; CodeQL (SEC-020); Dependabot updates reviewed on staging | A compromise inside an upstream release that passes review |
@@ -647,6 +648,61 @@ commit hash (SEC-002).
 version and a missing CHANGELOG section. The workflow itself first runs on
 the v0.1.0 tag.
 
+### SEC-024: Controllers work while Crossparty is focused, and only then
+
+**Decision:** Crossparty reads controllers itself with SDL3, from the KDE
+runtime, and turns them into the keys its interface and Microsoft's page
+already understand: the D-pad and left stick become arrow keys, A becomes
+Enter, and B becomes Escape, except on Microsoft's page, which has no key
+for "back": there B goes back in the page's history, like a browser's Back
+button. In handheld mode, Menu (≡) moves focus between the page and
+Crossparty's own Mute and Sign Out bar, because the page keeps the arrow
+keys for itself; it is a call into Crossparty's interface, never a key the
+page sees. It reads controllers only while Crossparty is
+the active app. When another app comes to the front, it stops reading; when
+Crossparty comes back, everything pressed meanwhile is read and thrown away
+before anything is sent. The Guide button and every button not named here
+are ignored. Controller names are logged when they connect; presses never are.
+
+**Why:** Steam Input's usual layout for a non-Steam app sends gamepad input,
+which Crossparty did not read, so handheld mode needed manual remapping
+(README, Controller setup, in 0.1.0). The spike (`docs/spike-controller.md`)
+found an easier route and rejected it: with a read-only `/run/udev`,
+Chromium's Gamepad API lets play.xbox.com drive itself with a controller, but
+Chromium gave the page every press even while Crossparty was not focused or
+was minimised. Whether a stray A press in a game ever reached a button in
+the party would then depend on Microsoft's page, and Microsoft's code could
+see everything pressed in games. Reading the controller in Crossparty's own
+code puts the focus rule where the app controls it, and the page only ever
+receives ordinary keys.
+
+**Permissions:** `--device=input` (the devices in `/dev/input`), with
+`--require-version=1.16.0`, the first stable Flatpak series to know it
+(Flathub requires that); the fallback
+Flathub offers for older versions is `--device=all`, which grants every
+device, so older Flatpak installs are refused instead. Not
+`/run/udev`: without udev's database Chromium finds no controllers, so the
+page cannot use the Gamepad API even though the devices are readable. SDL is
+told not to look for raw USB devices (hidraw), which the app cannot open
+anyway.
+
+**Fail safe:** if SDL cannot start, controllers are simply off and the app
+works as before. Keys are only ever sent to a focused Crossparty window.
+Going back never reloads the party page: Microsoft's app changes pages
+without loading a new document, so its back steps never reach the
+navigation check, and one that would load a whole page (for example back
+into the sign-in pages) is refused, because a reload ends the party. This
+also covers a mouse's Back button.
+
+**Tests:** `tests/GamepadNavigatorTest.cpp` (which keys each button and
+stick position becomes, repeating, letting go, and forgetting held
+directions when focus is lost). Checked by hand, on the desktop and in
+nested Gamescope: the D-pad, stick, A and B drive the page and the
+handheld bar; Menu moves between them, and B closes the sign-out dialog;
+B steps back through the page to its
+start without a reload; presses made with another window focused, and with
+Crossparty minimised, did nothing.
+
 ## Accepted risks
 
 ### RISK-001: QtWebEngine gets Chromium security fixes later than Chrome
@@ -672,3 +728,14 @@ display, so each could read the other's key presses (SEC-019). Signing in on
 the desktop, where Crossparty uses Wayland only, avoids typing the password in
 Game Mode at all. Accepted because handheld mode cannot work without it, and
 the games already share that display with each other.
+
+### RISK-004: The controller permission covers every input device
+
+Flatpak's `--device=input` grants all of `/dev/input`, which includes
+keyboards and mice as well as controllers, and it applies whether or not
+Crossparty is focused. Crossparty's code opens controllers only and reads
+them only while it is the active app (SEC-024), but the sandbox does not
+enforce that. Accepted because it is the narrowest permission Flatpak has
+for controllers, Flathub accepts it for exactly this, and handheld mode
+needs controllers to work without setup. Microsoft's page is kept from
+controllers separately, by leaving out `/run/udev`.

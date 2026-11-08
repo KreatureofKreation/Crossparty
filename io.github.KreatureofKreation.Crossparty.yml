@@ -34,6 +34,15 @@ finish-args:
   # option, so inside the app only Microsoft's sites get the microphone
   # permission. See docs/security.md#sec-012.
   - --socket=pulseaudio
+  # Controllers, read only while Crossparty is focused and turned into keys.
+  # No /run/udev, so Microsoft's page never sees a controller. See
+  # docs/security.md#sec-024.
+  - --device=input
+  # --device=input arrived in Flatpak 1.15.6; Flathub asks for the first
+  # stable series with it, 1.16.0. Older versions would ignore it silently,
+  # and the fallback Flathub offers, --device=all, grants every device, so an
+  # older Flatpak is refused instead.
+  - --require-version=1.16.0
   # Show the icon in KDE's system tray. See docs/security.md#sec-013.
   - --talk-name=org.kde.StatusNotifierWatcher
 

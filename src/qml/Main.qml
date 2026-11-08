@@ -66,6 +66,36 @@ Kirigami.ApplicationWindow {
         // Straight to the background holder if the window is not on screen.
         partyPage.parent = pageInBackground ? backgroundHolder.pageArea : pageHolder;
         overlay.hide();
+        focusPageIfNothingElse();
+    }
+
+    // Keys, including a controller's (GamepadInput), go to the page unless
+    // one of Crossparty's own controls has focus, so nobody has to tab into
+    // the page first.
+    function focusPageIfNothingElse() {
+        if (!activeFocusItem || activeFocusItem === contentItem) {
+            partyPage.forceActiveFocus();
+        }
+    }
+
+    // A controller's Menu button (GamepadInput): in handheld mode, moves
+    // between the page and the handheld bar. The page keeps the arrow keys
+    // for itself, so there is no other way to reach the bar's buttons.
+    function toggleControlsFocus() {
+        if (!handheld || signOutDialog.opened || wipeFailedDialog.opened) {
+            return;
+        }
+        if (handheldBar.controlsFocused) {
+            partyPage.forceActiveFocus();
+        } else {
+            handheldBar.focusControls();
+        }
+    }
+
+    onActiveChanged: {
+        if (active) {
+            focusPageIfNothingElse();
+        }
     }
 
     function toggleOverlay() {
@@ -110,8 +140,8 @@ Kirigami.ApplicationWindow {
     Component.onCompleted: {
         if (handheld) {
             showFullScreen();
-            partyPage.forceActiveFocus();
         }
+        partyPage.forceActiveFocus();
     }
 
     Connections {
@@ -161,6 +191,8 @@ Kirigami.ApplicationWindow {
         }
 
         HandheldBar {
+            id: handheldBar
+
             Layout.fillWidth: true
             visible: mainWindow.handheld
             onSignOutRequested: signOutDialog.open()

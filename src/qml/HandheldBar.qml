@@ -16,8 +16,17 @@ import Crossparty
 QQC2.ToolBar {
     id: handheldBar
 
+    // True while one of the bar's buttons has focus.
+    readonly property bool controlsFocused: muteButton.activeFocus || signOutButton.activeFocus
+
     signal signOutRequested
     signal pageFocusRequested
+
+    // Moves focus to the bar, as Tab would, so the focus outline shows. A
+    // controller's Menu button calls this through Main.qml.
+    function focusControls() {
+        (muteButton.enabled ? muteButton : signOutButton).forceActiveFocus(Qt.TabFocusReason);
+    }
 
     implicitHeight: Kirigami.Units.gridUnit * 3
     padding: Kirigami.Units.smallSpacing
@@ -29,10 +38,17 @@ QQC2.ToolBar {
         spacing: Kirigami.Units.largeSpacing
 
         Kirigami.Heading {
-            Layout.fillWidth: true
             level: 2
             text: Qt.application.displayName
+        }
+
+        // The page keeps the arrow keys for itself, so this is how a
+        // controller reaches these buttons.
+        QQC2.Label {
+            Layout.fillWidth: true
+            text: qsTr("Menu button (≡): here and back")
             elide: Text.ElideRight
+            opacity: 0.7
         }
 
         // Mutes the microphone itself (MicrophoneMute), and always shows
