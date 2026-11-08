@@ -75,38 +75,36 @@ running.
 
 - **Sign in on the desktop first.** In Game Mode, apps share an X11 display,
   so typing your password there is less private (see Known issues).
-- **Controller:** Crossparty reads keys, not the controller, so it needs a
-  Steam Input layout that turns the controller into keys and a mouse. See
-  [Controller setup](#controller-setup).
+- **Controller:** works straight away: the D-pad or left stick moves, A
+  selects and B goes back, on the Xbox page and on Crossparty's bar. Press
+  Menu (≡) to jump to the bar (Mute, Sign Out) and back. See
+  [Controllers](#controllers).
 - There is no overlay, muted badge or invite alert in Game Mode: Gamescope
   has no layer above games for them.
 
-## Controller setup
+## Controllers
 
-Crossparty does not read controllers itself yet; Steam Input turns the
-controller into keys for it. Steam's usual layout for a non-Steam game sends
-gamepad input instead, which Crossparty ignores, so set this up once.
+A controller works in Crossparty with no setup: the D-pad or left stick
+moves, A selects and B goes back, on Crossparty's own buttons and on the
+Xbox page. In handheld mode, Menu (≡) jumps between the page and
+Crossparty's bar. Going back never reloads the page, so a party carries on. Crossparty only listens while it is the app in front; anything
+you press in a game is never sent to the party, and Microsoft's page never
+sees your controller.
 
-**Handheld (Game Mode).** Select Crossparty in your library, open its
-controller settings, and edit its layout:
-
-- **D-pad:** Up Arrow, Down Arrow, Left Arrow and Right Arrow.
-- **A:** Enter. **B:** Escape.
-- **Right stick or right trackpad:** mouse, with **right trigger** as left
-  click, to use the page itself.
-
-**Desktop.** The same mapping goes in Steam, Settings, Controller, Desktop
-Layout, if you want the controller to work in Crossparty's window.
-
-**Open the overlay from the controller.** Steam keeps the Guide button for
-itself, but a chord works over any game. In Steam, Settings, Controller,
-Guide Button Chord Layout, pick a free button (D-pad Left is free by
-default; leave A, B, X and Y alone, Steam uses them) and make it press the
-overlay's hotkey. Meta can be unreliable from a controller, because KDE
-opens the launcher on Meta alone, so add a second hotkey without it first:
-System Settings, Keyboard, Shortcuts, Crossparty, Show or hide the overlay,
-add for example Ctrl+Alt+F10, and have the chord press that. The same works
-for mute.
+- **Steam Input:** in Game Mode, Steam's usual layout for a non-Steam game
+  (a gamepad) is what Crossparty expects. If you remapped Crossparty's
+  layout to keys for an earlier version, set it back to a gamepad layout.
+  On the desktop, if you mapped Steam's Desktop Layout D-pad to arrow keys,
+  every move happens twice: undo that mapping.
+- **Open the overlay from the controller.** Steam keeps the Guide button
+  for itself, but a chord works over any game. In Steam, Settings,
+  Controller, Guide Button Chord Layout, pick a free button (D-pad Left is
+  free by default; leave A, B, X and Y alone, Steam uses them) and make it
+  press the overlay's hotkey. Meta can be unreliable from a controller,
+  because KDE opens the launcher on Meta alone, so add a second hotkey
+  without it first: System Settings, Keyboard, Shortcuts, Crossparty, Show
+  or hide the overlay, add for example Ctrl+Alt+F10, and have the chord
+  press that. The same works for mute.
 
 ## Support
 

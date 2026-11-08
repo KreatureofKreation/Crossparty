@@ -174,6 +174,15 @@ QUrl WebSession::startUrl() const
 void WebSession::handleNavigation(QWebEngineNavigationRequest *request) const
 {
     const QUrl url = request->url();
+    // Going back or forward within Microsoft's app never comes here: its
+    // pages change without loading a new document. One that does come here
+    // would load a whole page, which ends the party, so it is refused. This
+    // covers a mouse's Back button and the controller's B (GamepadInput).
+    if (request->isMainFrame() && request->navigationType() == QWebEngineNavigationRequest::BackForwardNavigation) {
+        request->reject();
+        qCInfo(lcWeb) << "Back or forward would reload the party page; refused:" << describeForLog(url);
+        return;
+    }
     const NavigationPolicy::Decision decision = request->isMainFrame() ? NavigationPolicy::decideForPage(url) : NavigationPolicy::decideForEmbeddedFrame(url);
 
     switch (decision) {

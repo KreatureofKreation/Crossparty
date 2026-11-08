@@ -12,6 +12,18 @@ import Crossparty
 WebEngineView {
     id: partyPage
 
+    // A controller's B button goes back in the page (GamepadInput). The
+    // page's own pages never reload, so the party carries on; going back
+    // across a full page load is refused (WebSession.handleNavigation).
+    function goBackInPage() {
+        if (canGoBack) {
+            goBack();
+        }
+    }
+
+    // How GamepadInput finds the page.
+    objectName: "partyPage"
+
     profile: WebSession.profile
     // Waits for the saved sign-in to be restored first.
     url: WebSession.ready ? WebSession.startUrl : ""

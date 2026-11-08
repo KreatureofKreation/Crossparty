@@ -16,6 +16,8 @@ qt6-qtwebengine-devel
 openssl-devel
 # Muting our own microphone stream (PulseAudio API on PipeWire)
 pulseaudio-libs-devel
+# Reading controllers (SDL3, also in the KDE Flatpak runtime)
+SDL3-devel
 qt6-qttools-devel
 kf6-kirigami-devel
 layer-shell-qt-devel
